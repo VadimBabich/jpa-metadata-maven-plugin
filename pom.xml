@@ -3,7 +3,7 @@
 
   <groupId>io.github.vadimbabich</groupId>
   <artifactId>jpa-metadata-maven-plugin</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
 
   <packaging>maven-plugin</packaging>
 
@@ -30,7 +30,7 @@
     <connection>scm:git:${project.scm.url}</connection>
     <developerConnection>scm:git:${project.scm.url}</developerConnection>
     <url>https://github.com/VadimBabich/jpa-metadata-maven-plugin.git</url>
-    <tag>1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
