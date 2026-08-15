@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.maven.plugin.logging.Log;
@@ -29,8 +30,10 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * The {@code MetadataCollector} class is responsible for parsing Java source files, identifying
- * annotated classes, and extracting metadata related to database entity mappings.
+ * Parses Java sources and extracts the entity mapping metadata the generators work from.
+ *
+ * <p>Sources are read with JavaParser rather than reflection, so entities need not be compiled and
+ * their declaration order is preserved.
  *
  * @author Vadim Babich
  */
@@ -42,12 +45,6 @@ public class MetadataCollector {
   private final JavaParser javaParser;
   private final JavaFileFinder javaFileFinder;
 
-  /**
-   * Constructs a {@code MetadataCollector} instance.
-   *
-   * @param languageLevel the Java language level to use for parsing.
-   * @param log           the logging instance for debugging and error reporting.
-   */
   public MetadataCollector(JavaFileFinder javaFileFinder, Path sourceDirectory,
       JavaLanguageLevel languageLevel, Log log) {
     this.log = log;
@@ -59,12 +56,9 @@ public class MetadataCollector {
   }
 
   /**
-   * Scans a given package for Java classes annotated with {@code @Table} and returns a set of
-   * annotated class declarations.
+   * Finds the {@code @Table} types declared under {@code packageName}.
    *
-   * @param packageName the package to scan for annotated classes.
-   * @return a set of annotated class declarations.
-   * @throws IOException if an error occurs while reading files.
+   * @throws IOException if the sources cannot be read
    */
   public Set<TypeDeclaration<?>> extractAnnotatedClasses(String packageName) throws IOException {
     log.debug(format("Collecting entities in package '%s' with language level '%s'", packageName,
@@ -94,10 +88,7 @@ public class MetadataCollector {
   }
 
   /**
-   * Collects field names that are annotated with {@code @Column} from the given entity.
-   *
-   * @param entity the entity to process.
-   * @return a set of field names annotated with {@code @Column}.
+   * Returns the {@code @Column} field names of an entity, in declaration order.
    */
   public Set<String> collectColumnAnnotatedFieldNames(TypeDeclaration<?> entity) {
     if (entity instanceof RecordDeclaration recordDeclaration) {
@@ -108,40 +99,30 @@ public class MetadataCollector {
     return Collections.emptySet();
   }
 
-  /**
-   * Extracts field names from a {@link RecordDeclaration} that are annotated with {@code @Column}.
-   *
-   * @param declaration the record declaration.
-   * @return a set of field names.
-   */
   private Set<String> collectFields(RecordDeclaration declaration) {
     return declaration.getParameters().stream()
         .filter(parameter -> parameter.getAnnotationByName("Column").isPresent())
         .map(NodeWithSimpleName::getNameAsString)
-        .collect(Collectors.toUnmodifiableSet());
+        .collect(toUnmodifiableOrderedSet());
   }
 
-  /**
-   * Extracts field names from a {@link ClassOrInterfaceDeclaration} that are annotated with
-   * {@code @Column}.
-   *
-   * @param declaration the class or interface declaration.
-   * @return a set of field names.
-   */
   private Set<String> collectFields(ClassOrInterfaceDeclaration declaration) {
     return declaration.getFields().stream()
         .filter(field -> field.getAnnotationByClass(Column.class).isPresent())
         .map(field -> field.getVariable(0).getNameAsString())
-        .collect(Collectors.toUnmodifiableSet());
+        .collect(toUnmodifiableOrderedSet());
   }
 
-  /**
-   * Parses a Java file into a {@link CompilationUnit}.
-   *
-   * @param path the file path.
-   * @return an {@link Optional} containing the parsed {@link CompilationUnit}, or empty if parsing
-   * fails.
-   */
+  // Generated output must be byte-identical between runs, so encounter order has to survive
+  // collection; toUnmodifiableSet gives no such guarantee, and toCollection alone would leave the
+  // set mutable.
+  private static Collector<String, ?, Set<String>> toUnmodifiableOrderedSet() {
+    return Collectors.collectingAndThen(
+        Collectors.toCollection(LinkedHashSet::new), Collections::unmodifiableSet);
+  }
+
+  // A file that fails to parse is skipped rather than failing the build: one malformed source
+  // should not block metadata generation for the rest of the package.
   private Optional<CompilationUnit> parseJavaFile(Path path) {
     try {
       log.debug(format("Parsing file: '%s'", path));
@@ -154,12 +135,6 @@ public class MetadataCollector {
     }
   }
 
-  /**
-   * Extracts classes and members annotated with {@code @Table} from a {@link CompilationUnit}.
-   *
-   * @param cu the compilation unit.
-   * @return a set of annotated class declarations.
-   */
   private Set<TypeDeclaration<?>> extractTypes(CompilationUnit cu,
       Predicate<TypeDeclaration<?>> filter) {
     return cu.findAll(TypeDeclaration.class).stream()
@@ -168,14 +143,6 @@ public class MetadataCollector {
         .collect(Collectors.toSet());
   }
 
-  /**
-   * Converts a string representation of a Java language level to a {@link LanguageLevel} enum.
-   *
-   * @param languageLevel the language level string.
-   * @param log           the logging instance.
-   * @return the corresponding {@link LanguageLevel} enum value.
-   * @throws IllegalArgumentException if the provided language level is invalid.
-   */
   private LanguageLevel getLanguageLevel(JavaLanguageLevel languageLevel, Log log) {
     try {
       return LanguageLevel.valueOf(languageLevel.name());
@@ -186,12 +153,6 @@ public class MetadataCollector {
     }
   }
 
-  /**
-   * Converts a package name into a normalized file system path.
-   *
-   * @param packageName the package name.
-   * @return the corresponding path as a string.
-   */
   private Path toPathFromPackage(String packageName) {
     return sourceDirectory.resolve(packageName.replace(".", File.separator));
   }

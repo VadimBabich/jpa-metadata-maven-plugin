@@ -8,18 +8,18 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Interface for generating metadata classes from Java entity declarations.
+ * Writes the metamodel sources for a graph of entity declarations. This is the extension point for
+ * supporting a persistence backend other than R2DBC.
  *
  * @author Vadim Babich
  */
+// Guava's @Beta graph type leaks into this SPI signature; see GenerateEntityMetadataMojo.
+@SuppressWarnings("UnstableApiUsage")
 public interface EntityMetadataGenerator {
 
   /**
-   * Generates metadata source files for the given root entity and its related types.
-   *
-   * @param graph                the graph of related entity declarations
-   * @param entityFieldsResolver function to extract field names from entity types
-   * @throws IOException if the generation fails due to I/O issues
+   * Field names from {@code entityFieldsResolver} arrive in declaration order, and implementations
+   * must emit them in that order: regenerating unchanged sources has to be byte-identical.
    */
   void generateMetadataClasses(Graph<TypeDeclaration<?>> graph,
       Function<TypeDeclaration<?>, Set<String>> entityFieldsResolver) throws IOException;

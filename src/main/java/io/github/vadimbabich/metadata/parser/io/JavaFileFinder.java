@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 /**
- * Functional interface for finding Java source files in a file system.
+ * Locates Java sources under a root directory.
  *
  * @author Vadim Babich
  */
@@ -13,11 +13,7 @@ import java.util.stream.Stream;
 public interface JavaFileFinder {
 
   /**
-   * Returns a stream of Java source file paths under the given root directory.
-   *
-   * @param root the root directory to search
-   * @return a stream of Java file paths
-   * @throws IOException if an I/O error occurs
+   * The returned stream holds an open directory handle; the caller must close it.
    */
   Stream<Path> findJavaFiles(Path root) throws IOException;
 }
