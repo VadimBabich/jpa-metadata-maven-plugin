@@ -27,39 +27,18 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * A Maven Mojo that generates a static metadata model for JPA entities.
+ * Generates static metamodel classes from Spring Data Relational entities, so that column
+ * references are checked at compile time instead of being written as strings.
  *
- * <p>This plugin scans the given {@code packageName} for entity classes annotated with
- * {@link org.springframework.data.relational.core.mapping.Table} and generates metadata classes
- * with public static final fields corresponding to the class members annotated with
- * {@link org.springframework.data.relational.core.mapping.Column}.
- *
- * <p>The generated classes mirror the structure of the original JPA model, including:
- * <ul>
- *   <li>Nested classes (inner or static)</li>
- *   <li>Class inheritance hierarchies within the target package</li>
- * </ul>
- *
- * <p>Only top-level and nested entity classes defined directly in the specified {@code packageName}
- * are processed. Classes from project dependencies or outside the given package are not supported.
- *
- * <p>The resulting metadata is emitted as {@code public static final} classes with fields that can
- * be used for reference in compile-time-safe queries, mappings, and schema introspection.
- *
- * <p>Example:
- * <pre>{@code
- * public final class User_ {
- *     public static final Column_ ID = new Column_(User.class, "id");
- *     public static final Column_ NAME = new Column_(User.class, "name");
- * }
- * }</pre>
- *
- * <p>The output is written to the {@code outputDirectory} (defaults to the build output directory),
- * and the generated sources are automatically added to the Maven project's compile source roots.
+ * <p>Only {@code @Table} types declared in {@code packageName} are processed; entities from
+ * dependencies or other packages are not.
  *
  * @author Vadim Babich
  * @since 1.0.0
  */
+// Guava's com.google.common.graph is @Beta and may change across Guava majors. The graph type
+// also appears in this plugin's SPI; replacing it is owned by the API/SPI governance workstream.
+@SuppressWarnings("UnstableApiUsage")
 @Mojo(
     name = "generate-metadata",
     defaultPhase = LifecyclePhase.GENERATE_SOURCES,
@@ -67,57 +46,39 @@ import org.apache.maven.project.MavenProject;
 public class GenerateEntityMetadataMojo extends AbstractMojo {
 
   /**
-   * The output directory where generated metadata classes will be stored.
-   * <p>
-   * Defaults to {@code ${project.build.outputDirectory}}.
+   * Directory the generated metadata classes are written to. It is registered as a compile source
+   * root, so generated sources are compiled with the rest of the project.
    */
-  @Parameter(property = "outputDirectory", defaultValue = "${project.build.outputDirectory}", required = true)
+  @Parameter(property = "outputDirectory", defaultValue = "${project.build.directory}/generated-sources/metamodel", required = true)
   File outputDirectory;
 
   /**
-   * The root package to scan for JPA entity classes.
-   * <p>
-   * Example: {@code com.example.model}
+   * Root package to scan for entity classes, for example {@code com.example.model}.
    */
   @Parameter(property = "packageName", required = true)
   String packageName;
 
   /**
-   * The Java language level used to parse source files.
-   * <p>
-   * Valid values are enum constants like {@code JAVA_8}, {@code JAVA_11}, {@code JAVA_17},
-   * {@code JAVA_21}, etc.
+   * Java language level used to parse the sources.
    */
   @Parameter(property = "javaLanguageLevel", defaultValue = "JAVA_17", required = true)
   JavaLanguageLevel languageLevel;
 
   /**
-   * The relative path to the Java source directory.
-   * <p>
-   * Defaults to {@code src/main/java}.
+   * Source root to scan, resolved against the project base directory.
    */
-  @Parameter(property = "sourceDirectory", defaultValue = "src/main/java/", required = true)
+  @Parameter(property = "sourceDirectory", defaultValue = "src/main/java", required = true)
   Path sourceDirectory;
 
   /**
-   * The metadata generator implementation to use.
-   * <p>
-   * Supported values: {@code r2dbc}, etc.
+   * Name of the generator implementation to use. Only {@code r2dbc} ships with the plugin.
    */
-  @Parameter(property = "entityMetadataGenerator", defaultValue = "r2dbc", required = true)
+  @Parameter(property = "entityMetadataGenerator", defaultValue = "r2dbc")
   String entityMetadataGenerator;
 
-  /**
-   * Injected Maven project instance, used to register generated sources.
-   */
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   MavenProject project;
 
-  /**
-   * Executes the metadata generation process as part of the Maven build lifecycle.
-   *
-   * @throws MojoExecutionException if any step in the metadata generation fails
-   */
   @Override
   public void execute() throws MojoExecutionException {
     Log log = getLog();
@@ -186,20 +147,6 @@ public class GenerateEntityMetadataMojo extends AbstractMojo {
     ));
   }
 
-  /**
-   * Formats a type hierarchy graph into a readable string representation, showing root nodes and
-   * their nested child relationships using indentation.
-   *
-   * <p>Example output:
-   * <pre>
-   * • RootClass
-   *   ↳ ChildClass
-   *     ↳ GrandChildClass
-   * </pre>
-   *
-   * @param graph the graph representing type declarations and their nesting relationships
-   * @return a formatted string representing the hierarchy
-   */
   private String formatGraphHierarchy(Graph<TypeDeclaration<?>> graph) {
     StringBuilder sb = new StringBuilder();
 

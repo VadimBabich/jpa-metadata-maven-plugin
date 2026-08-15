@@ -1,8 +1,10 @@
 # JPA Metadata Maven Plugin
 
-The **JPA Metadata Maven Plugin** scans your Java source code for entity classes annotated with `@Table`, `@Column`, etc., analyzes relationships, and generates metadata classes for type-safe query construction. It's designed with modular backends in mind, including **R2DBC** and custom implementations.
+The **JPA Metadata Maven Plugin** scans your Java source code for entity classes annotated with Spring Data Relational's `@Table` and `@Column` and generates metadata classes for type-safe query construction. It's designed with modular backends in mind, including **R2DBC** and custom implementations.
 
-Inspired by the **Hibernate JPA Static Metamodel Generator**, this plugin solves a key issue in **Spring Data JPA** and **Spring Data R2DBC**: custom queries rely heavily on string-based column references. If a column is renamed or removed, you won’t know until runtime.
+> **_⚠️ Naming note:_** despite the plugin's name, JPA (`jakarta.persistence`) annotations are **not** supported. The plugin processes **Spring Data Relational** annotations (`org.springframework.data.relational.core.mapping.Table`/`.Column`) only.
+
+Inspired by the **Hibernate JPA Static Metamodel Generator**, this plugin solves a key issue in **Spring Data R2DBC**: custom queries rely heavily on string-based column references. If a column is renamed or removed, you won’t know until runtime.
 
 This plugin helps prevent that by generating static metamodels from your entities, bringing compile-time safety and better IDE support to your query code.
 
@@ -44,7 +46,7 @@ Let’s walk through a real use case: fetching users who have a specific attribu
               @Column("usat_value") String attributeValue
       ) { }
       ```
-1. ### Target SQL Query
+2. ### Target SQL Query
    ```sql
    SELECT _user.*
    FROM users _user
@@ -52,13 +54,13 @@ Let’s walk through a real use case: fetching users who have a specific attribu
         ON _userattributes.usat_user_id = _user.user_id
    WHERE _userattributes.usat_value = $1
    ```
-1. ### Reactive Repository Method
+3. ### Reactive Repository Method
    Using Spring’s SQL DSL with metamodels:
    ```java
      public Flux<User> findUsersByAttributeValue(String attributeValue) {
      
       // Define filtering criteria on the attribute value 
-      Criteria criteria = Criteria.where(UserAttribute_.VALUE.name()).is(attributeValue);
+      Criteria criteria = Criteria.where(UserAttribute_.ATTRIBUTE_VALUE.name()).is(attributeValue);
       BoundCondition condition = queryMapper.getMappedObject(criteria);
    
       Table userTable = User_.getTable();
@@ -78,7 +80,7 @@ Let’s walk through a real use case: fetching users who have a specific attribu
               .all();
    }
    ```
-1. ### Metamodel Classes (Generated)
+4. ### Metamodel Classes (Generated)
    `UserAttribute_`
      ```java
      import org.springframework.data.r2dbc.config.StaticR2dbcEntityTemplateAccessor_;
@@ -86,11 +88,11 @@ Let’s walk through a real use case: fetching users who have a specific attribu
      import org.springframework.data.relational.core.sql.Table;
    
      public final class UserAttribute_ {
-        public static final Column_ ATTRIBUTE_VALUE = new Column_(UserAttribute.class, "attributeValue");
+        public static final Column_ ATTRIBUTE_ID = new Column_(UserAttribute.class, "attributeId");
    
         public static final Column_ USER_ID = new Column_(UserAttribute.class, "userId");
    
-        public static final Column_ ATTRIBUTE_ID = new Column_(UserAttribute.class, "attributeId");
+        public static final Column_ ATTRIBUTE_VALUE = new Column_(UserAttribute.class, "attributeValue");
    
         private UserAttribute_() {
         }
@@ -153,13 +155,13 @@ While the example uses a specific condition (filter by attribute value), the rea
 
 ## Parameters
 
-| Parameter               | Required | Default                          | Description                                                |
-|-------------------------|----------|----------------------------------|------------------------------------------------------------|
-| outputDirectory         | ❌        | ${project.build.outputDirectory} | Directory where generated metadata classes will be placed. |
-| packageName             | ✅        | none                             | Package to scan for entity classes.                        |
-| languageLevel           | ❌        | JAVA_17                          | Java language level used during parsing.                   |
-| sourceDirectory         | ❌        | src/main/java                    | Path to the root directory of the Java source files.       |
-| entityMetadataGenerator | ✅        | r2dbc                            | Name of the metadata generator to use (e.g., r2dbc).       |
+| Parameter               | Required | Default                                                | Description                                                |
+|-------------------------|----------|--------------------------------------------------------|------------------------------------------------------------|
+| outputDirectory         | ❌       | ${project.build.directory}/generated-sources/metamodel | Directory where generated metadata classes will be placed. |
+| packageName             | ✅       | none                                                   | Package to scan for entity classes.                        |
+| languageLevel           | ❌       | JAVA_17                                                | Java language level used during parsing.                   |
+| sourceDirectory         | ❌       | src/main/java                                          | Path to the root directory of the Java source files.       |
+| entityMetadataGenerator | ❌       | r2dbc                                                  | Name of the metadata generator to use (e.g., r2dbc).       |
 
 
 ## Sample Output
@@ -197,5 +199,5 @@ public class DatabaseConfiguration {
 Generated files land in `target/generated-sources`. To enable autocomplete and navigation:
 
 1. Right-click the `target/generated-sources` folder.
-1. Select **Mark Directory as → Generated Sources Root**.
+2. Select **Mark Directory as → Generated Sources Root**.
 IntelliJ will now treat these files like regular code.

@@ -29,15 +29,12 @@ class MetadataGeneratorFactoryTest {
 
   @Test
   void givenKnownGeneratorName_whenResolve_thenReturnsExpectedGenerator() {
-    // Given
     String generatorType = "r2dbc";
     MetadataGeneratorFactory factory = new MetadataGeneratorFactory(generatorType, outputDir, log,
         classSuffix);
 
-    // When
     EntityMetadataGenerator generator = factory.resolve();
 
-    // Then
     assertNotNull(generator, "Expected generator to be non-null for known type");
     assertEquals(
         "io.github.vadimbabich.metadata.generator.r2dbc.R2dbcEntityMetadataGenerator",
@@ -48,12 +45,10 @@ class MetadataGeneratorFactoryTest {
 
   @Test
   void givenUnknownGeneratorName_whenResolve_thenThrowsIllegalArgumentException() {
-    // Given
     String generatorType = "unknown";
     MetadataGeneratorFactory factory = new MetadataGeneratorFactory(generatorType, outputDir, log,
         classSuffix);
 
-    // When / Then
     IllegalArgumentException exception = assertThrows(
         IllegalArgumentException.class,
         factory::resolve,

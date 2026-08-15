@@ -4,6 +4,7 @@ import io.github.vadimbabich.metadata.api.EntityMetadataGenerator;
 import io.github.vadimbabich.metadata.api.EntityMetadataGeneratorFactory;
 import io.github.vadimbabich.metadata.api.GeneratedClassNamingStrategy;
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -11,8 +12,9 @@ import java.util.Set;
 import org.apache.maven.plugin.logging.Log;
 
 /**
- * Resolves a {@link EntityMetadataGenerator} implementation based on the provided fully qualified
- * class name. If no implementation class name is provided, a default strategy is returned.
+ * Resolves the {@link EntityMetadataGenerator} named by the {@code entityMetadataGenerator}
+ * parameter from the factories on the classpath. With no name given, resolution succeeds only when
+ * exactly one factory is present.
  *
  * @author Vadim Babich
  */
@@ -67,13 +69,13 @@ public class MetadataGeneratorFactory {
     EntityMetadataGeneratorFactory factory = factories.get(selectedName);
     if (factory == null) {
       throw new IllegalArgumentException("Unknown generator: '" + selectedName +
-          "'. Supported: " + factories.keySet());
+          "'. Supported: " + getSupportedGeneratorNames());
     }
 
     return factory.create(classNamingStrategy, outputDir, log);
   }
 
   public Set<String> getSupportedGeneratorNames() {
-    return factories.keySet();
+    return Collections.unmodifiableSet(factories.keySet());
   }
 }
