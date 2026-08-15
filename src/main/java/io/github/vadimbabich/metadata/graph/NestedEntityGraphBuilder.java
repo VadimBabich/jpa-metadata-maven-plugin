@@ -18,23 +18,17 @@ import java.util.function.BiConsumer;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Builds a directed graph of nested JPA entity types annotated with {@code @Table}, including
- * inheritance and inner class relationships within a specified package.
- * <p>
- * Uses {@link MetadataCollector} to parse Java source files and extract entity structure and
- * metadata.
+ * Builds a directed graph of {@code @Table} types in a package, with an edge from each type to the
+ * nested types it declares. Column fields are collected up the inheritance chain, so a subclass
+ * reports its own fields followed by those of its supertypes.
  */
+// Builds on Guava's @Beta graph API; see GenerateEntityMetadataMojo.
+@SuppressWarnings("UnstableApiUsage")
 public class NestedEntityGraphBuilder implements EntityGraphBuilder {
 
   private final String packageName;
   private final MetadataCollector collector;
 
-  /**
-   * Constructs a new {@code NestedEntityGraphBuilder}.
-   *
-   * @param packageName the base package to scan
-   * @param collector   metadata extractor for Java types
-   */
   public NestedEntityGraphBuilder(String packageName, MetadataCollector collector) {
     this.packageName = packageName;
     this.collector = collector;
@@ -109,6 +103,9 @@ public class NestedEntityGraphBuilder implements EntityGraphBuilder {
         .findFirst();
   }
 
+  // JavaParser symbol resolution is not configured, so type.resolve() fails for anything it cannot
+  // see. Fall back to matching the simple name across the sources, then to assuming the supertype
+  // sits in the scanned package. A wrong guess costs the inherited columns, not the build.
   private String resolveFullyQualifiedName(ClassOrInterfaceType type) {
     try {
       return type.resolve().asReferenceType().getQualifiedName();

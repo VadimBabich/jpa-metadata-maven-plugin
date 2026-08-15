@@ -3,18 +3,20 @@
 
   <groupId>io.github.vadimbabich</groupId>
   <artifactId>jpa-metadata-maven-plugin</artifactId>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
 
   <packaging>maven-plugin</packaging>
 
   <name>Entity Metadata Generator Plugin</name>
-  <description>A Maven plugin to generate metadata for Java entity classes annotated with @Table and @Column</description>
-  <url>https://github.com/VadimBabich/entity-metadata-plugin</url>
+  <!-- Avoid the '@' sigil here: Maven treats @...@ as a filter placeholder, so writing the
+       annotation names as @Table/@Column makes this text an unresolvable expression. -->
+  <description>A Maven plugin that generates static metamodel classes from Spring Data Relational entities, using their Table and Column annotations, for type-safe query construction</description>
+  <url>https://github.com/VadimBabich/jpa-metadata-maven-plugin</url>
 
   <licenses>
     <license>
       <name>The Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
 
@@ -34,22 +36,25 @@
   </scm>
 
   <properties>
-    <java.version>21</java.version>
-    <source.version>17</source.version>
+    <java.release>17</java.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Reproducible builds; update on release -->
+    <project.build.outputTimestamp>2026-08-08T00:00:00Z</project.build.outputTimestamp>
 
     <maven-plugin-annotations.version>3.15.0</maven-plugin-annotations.version>
     <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
     <maven-plugin-plugin.version>3.13.1</maven-plugin-plugin.version>
     <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
-    <maven-project.version>2.2.1</maven-project.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <maven-invoker-plugin.version>3.6.1</maven-invoker-plugin.version>
+    <groovy.version>4.0.33</groovy.version>
     <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
+    <maven-core.version>3.9.9</maven-core.version>
 
     <javaparser-core.version>3.27.0</javaparser-core.version>
     <javapoet.version>1.13.0</javapoet.version>
-    <reflections.version>0.10.2</reflections.version>
     <guava.version>33.4.8-jre</guava.version>
 
     <!-- Test-->
@@ -57,9 +62,21 @@
     <spring-data.version>3.5.0</spring-data.version>
     <junit.version>5.13.1</junit.version>
     <assertj-core.version>3.27.3</assertj-core.version>
-    <maven-core.version>3.9.9</maven-core.version>
-    <kotlin.version>2.1.21</kotlin.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Pins all JUnit artifacts to one version; mockito-junit-jupiter otherwise
+           drags in an older junit-jupiter-api that breaks engine/api compatibility. -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
 
@@ -80,8 +97,8 @@
 
     <dependency>
       <groupId>org.apache.maven</groupId>
-      <artifactId>maven-project</artifactId>
-      <version>${maven-project.version}</version>
+      <artifactId>maven-core</artifactId>
+      <version>${maven-core.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -97,13 +114,6 @@
       <groupId>com.squareup</groupId>
       <artifactId>javapoet</artifactId>
       <version>${javapoet.version}</version>
-    </dependency>
-
-    <!-- Reflections Utils -->
-    <dependency>
-      <groupId>org.reflections</groupId>
-      <artifactId>reflections</artifactId>
-      <version>${reflections.version}</version>
     </dependency>
 
     <!-- Guava-->
@@ -136,23 +146,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj-core.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-core</artifactId>
-      <version>${maven-core.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -162,18 +158,35 @@
     <plugins>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce-environment</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.9,)</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>[17,)</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Not bound to the lifecycle; run on demand:
+           mvn versions:dependency-updates-report -->
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
         <version>${versions-maven-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>check-dependency-conflicts</id>
-            <goals>
-              <goal>dependency-updates-report</goal>
-            </goals>
-            <phase>validate</phase>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>
@@ -205,46 +218,55 @@
         <artifactId>maven-release-plugin</artifactId>
         <version>${maven-release-plugin.version}</version>
         <configuration>
-          <tagNameFormat>@{project.version}</tagNameFormat>
-          <releaseProfiles>release</releaseProfiles>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
           <goals>deploy</goals>
           <autoVersionSubmodules>true</autoVersionSubmodules>
           <scmCommentPrefix>[ci skip]</scmCommentPrefix>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <release>${java.release}</release>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+      </plugin>
+
+      <!-- End-to-end: runs the plugin against src/it/ consumer projects, compiles the
+           generated sources, and diffs them against the committed golden corpus. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>${maven-invoker-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <version>${groovy.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <postBuildHookScript>verify</postBuildHookScript>
+          <streamLogs>true</streamLogs>
+        </configuration>
         <executions>
           <execution>
-            <id>default-compile</id>
-            <phase>none</phase>
-          </execution>
-          <execution>
-            <id>default-testCompile</id>
-            <phase>none</phase>
-          </execution>
-          <execution>
-            <id>compile</id>
-            <phase>compile</phase>
+            <id>integration-test</id>
             <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>testCompile</id>
-            <phase>test-compile</phase>
-            <goals>
-              <goal>testCompile</goal>
+              <goal>install</goal>
+              <goal>run</goal>
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <release>${java.version}</release>
-          <source>${source.version}</source>
-          <target>${java.version}</target>
-        </configuration>
       </plugin>
 
     </plugins>

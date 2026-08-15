@@ -7,11 +7,7 @@ import java.io.File;
 import org.apache.maven.plugin.logging.Log;
 
 /**
- * Factory for creating {@link R2dbcEntityMetadataGenerator} instances.
- * <p>
- * This implementation is registered under the name {@code "r2dbc"} and is intended
- * for generating metadata classes based on Spring Data R2DBC.
- * </p>
+ * The generator backend shipped with the plugin, selected as {@code r2dbc}.
  *
  * @author Vadim Babich
  */
