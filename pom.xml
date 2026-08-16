@@ -59,7 +59,7 @@
 
     <!-- Test-->
     <mockito.version>5.18.0</mockito.version>
-    <spring-data.version>3.5.0</spring-data.version>
+    <spring-data.version>3.5.12</spring-data.version>
     <junit.version>5.13.1</junit.version>
     <assertj-core.version>3.27.3</assertj-core.version>
   </properties>
