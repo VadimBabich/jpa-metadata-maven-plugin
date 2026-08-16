@@ -4,10 +4,12 @@ target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+### The whole directory: no .idea file is tracked, and IDE state is per-machine.
+.idea/
+
+### Per-machine agent permissions (absolute home paths, key filenames). Not .claude/ —
+### .claude/commands/ is shared repo tooling and stays commit-eligible.
+.claude/settings.local.json
 *.iws
 *.iml
 *.ipr
@@ -36,3 +38,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Private working material — the program paper, the ADRs, the evidence corpus and its
+### manifest. Publishing any of it is a separate, unresolved decision (R-P0.1). Do not
+### remove this entry.
+_doc/
+
+### Old corpus locations (relocated to _doc/ 2026-08-16); kept to catch a re-copy.
+### docs/ is committed and publishable, so _doc/ above does not cover these.
+docs/repo_usage/
+docs/repository/

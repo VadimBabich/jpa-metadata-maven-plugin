@@ -1,0 +1,27 @@
+# Formatting is deterministic across machines, IDEs and agents.
+# Matches the existing code (2-space indent, ~100 col); do not bulk-reformat to change it.
+# NEVER reformat src/it/**/expected/** — those files are byte-compared by the invoker IT.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.java]
+indent_size = 2
+continuation_indent_size = 4
+max_line_length = 100
+
+[*.{xml,yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+indent_size = 2
+trim_trailing_whitespace = false  # trailing double-space is a hard line break
+
+[Makefile]
+indent_style = tab
