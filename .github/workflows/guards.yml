@@ -1,0 +1,55 @@
+name: Guards
+
+# Repository guards that are independent of the Maven build: secret scanning and a
+# check that private material never becomes tracked. Kept separate from maven.yml so a
+# guard failure is unambiguous and so these run once, not per JDK.
+
+on:
+  push:
+    branches:
+      - master
+      - 'feature/**'
+      - 'bug/**'
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0          # gitleaks scans commit history, not just the worktree
+      # Run the upstream image directly: no marketplace-action licence gate.
+      # Pinned by digest — a mutable tag would let an upstream push change what executes
+      # here with the repository bind-mounted. Bump tag and digest together.
+      - name: Run gitleaks over full history
+        run: |
+          docker run --rm -v "$PWD:/repo" \
+            zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            detect --source /repo --redact --verbose
+
+  private-paths:
+    name: No private material tracked
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # The disclosure risk in this repository is proprietary source, not only
+      # credentials: _doc/ (program paper, ADRs) and the evidence corpus must never be
+      # tracked. .gitignore is the primary guard; this is the backstop that survives an
+      # ignore being weakened. See _doc/adr/adr-corpus-restore-vs-reattest.md.
+      - name: Fail if _doc/ or the evidence corpus is tracked
+        run: |
+          hits=$(git ls-files | grep -E '^(_doc/|docs/(repo_usage|repository)/)' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::Private material is tracked in git:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "clean — no private paths tracked"
