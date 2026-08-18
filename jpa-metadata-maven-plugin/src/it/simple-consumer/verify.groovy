@@ -44,5 +44,19 @@ expectedFiles.each { relative ->
         "Generated file differs from golden corpus: ${relative}"
 }
 
+// 3. Documented log surface stays true (README §Sample Output — binding map row B4).
+//    Format-level assertions, not literals: counts and paths vary by project. The
+//    tree-glyph lines stay unbound — illustrative rendering, accepted residual.
+def buildLog = new File(basedir, 'build.log')
+assert buildLog.isFile() : 'build.log missing — invoker log file expected in the cloned project'
+String pluginLog = buildLog.text
+
+assert pluginLog =~ /Generating metadata for '[\w.]+' package with language level '\w+'/ :
+    'Start log line no longer matches README §Sample Output — update both together (binding map row B4)'
+assert pluginLog =~ /Generated metadata for \d+ entity classes into: '.+'/ :
+    'Summary log line no longer matches README §Sample Output — update both together (binding map row B4)'
+assert pluginLog.contains('Included entities:') :
+    'Entity-list heading no longer matches README §Sample Output — update both together (binding map row B4)'
+
 println "Verified: generated sources compile and match the golden corpus (${expectedFiles.size()} files)."
 return true
