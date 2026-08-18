@@ -40,6 +40,8 @@ files on the correct side.
 - `_doc/plans/`, `_doc/investigations/` — one file per workstream, WS-1 to WS-14.
 - `docs/runbooks/` — corpus verification (G0), golden-corpus update, durability bundle (R-P0),
   ADR method. Follow them rather than re-deriving the procedures.
+- `docs/reactive-code-style.md` — the reactive rule set (hand-written runtime, generated output,
+  tests). Read it before writing or emitting a single reactive line; its §1 and §8 are contractual.
 
 ## Current state (2026-08-16)
 
@@ -92,6 +94,21 @@ Optimize for scanning, not compactness.
   injects by design.
 - `src/main/java` declares explicit types today (no `var`). Match the file you are editing
   rather than introducing a second style.
+
+**Reactive code** — full rules in `docs/reactive-code-style.md`; read it before writing or emitting
+reactive code. The non-negotiables, because they are the ones violated silently:
+
+- **Never** block, schedule (`subscribeOn`/`publishOn`/`Schedulers`), `subscribe()`, or embed policy
+  (`timeout`/`retryWhen`/`cache`/`onErrorContinue`) in library or generated code. Latency and retry
+  budgets are the consumer's; blocking one event-loop thread stalls every request it multiplexes.
+- **Defer every fallback that costs anything**: `switchIfEmpty(Mono.defer(...))` or
+  `Mono.error(Supplier)` — the eager form builds the exception, stack trace and all, on the happy
+  path too. Never `Mono.just(someCall())`.
+- A named publisher is a *description*: two subscriptions run the I/O twice. Compose once.
+- Bound `flatMap` concurrency against the connection pool; pick `concatMap` when order matters.
+- Generated code is immutable, stateless, I/O-free and deterministic in emission order (rail 4).
+- Tests assert signals with `StepVerifier`, including an error and a cancellation path; `block()`
+  belongs in fixtures, never in an assertion.
 
 **Comments and JavaDoc.** Comments explain *why*: a constraint, a workaround, a non-obvious
 rule. Delete anything that restates the code. JavaDoc on public API only, one or two sentences,
