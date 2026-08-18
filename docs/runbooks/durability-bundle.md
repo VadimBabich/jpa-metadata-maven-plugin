@@ -8,7 +8,7 @@ Run after any significant working session.
 |---|---|---|
 | Code, tests, golden corpus, CI, these runbooks | git, pushed to `origin` (`master` tracks `origin/master`) | **Yes** — on the remote |
 | Unpushed feature branches | local git only | Only via the bundle below |
-| `_doc/` — HLD, `_doc/adr/` (12 ADRs), investigations, plans, evaluations, diagrams, translations, evidence corpus (~156 files, ~20 MB) | working tree only; **gitignored, so not in git at all** | **No — this is the R-P0 risk** |
+| `_doc/` — HLD, `_doc/adr/` (19 ADRs as of 2026-08-18), investigations, plans, evaluations, diagrams, translations, evidence assets and corpus | working tree only; **gitignored, so not in git at all** | **No — this is the R-P0 risk** |
 
 **The critical point: `git bundle` archives committed history only. `_doc/` is gitignored,
 so no bundle will ever contain it.** The program paper — the design work, the twelve ADRs,
@@ -37,7 +37,7 @@ git bundle verify ~/backups/jpa-metadata/repo-$D.bundle    # expect "records a c
 ```bash
 tar -czf ~/backups/jpa-metadata/doc-$D.tar.gz _doc
 # verify the archive really holds the paper, the ADRs and the corpus:
-tar -tzf ~/backups/jpa-metadata/doc-$D.tar.gz | grep -c '^_doc/adr/adr-.*\.md$'   # expect 12
+tar -tzf ~/backups/jpa-metadata/doc-$D.tar.gz | grep -c '^_doc/adr/adr-.*\.md$'   # expect >= 19 (count grows; verify against `ls _doc/adr/adr-*.md | wc -l`)
 tar -tzf ~/backups/jpa-metadata/doc-$D.tar.gz | grep -c 'hld-entity-metamodel.md' # expect >= 1
 tar -tzf ~/backups/jpa-metadata/doc-$D.tar.gz | grep -c '^_doc/repo_usage/'       # expect 28
 ```
