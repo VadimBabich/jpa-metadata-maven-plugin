@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  */
 final class GoldenCorpus {
 
-  private static final String CONSUMER_PATH = "src/it/simple-consumer";
+  private static final String CONSUMER_PATH = "jpa-metadata-maven-plugin/src/it/simple-consumer";
   private static final String METAMODEL_PACKAGE_PATH = "com/example/model";
 
   private final Path consumerRoot;
