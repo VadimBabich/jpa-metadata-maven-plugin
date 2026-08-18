@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.vadimbabich</groupId>
+    <artifactId>entity-metamodel-parent</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>entity-metamodel-runtime</artifactId>
+
+  <name>Entity Metamodel Runtime</name>
+  <description>
+    Resolution core of the entity metamodel: EntityRef and PropertyRef (pure data, instance-scoped
+    aliases, value equality), name resolution through Spring's mapping context, and the owned
+    Generated and RawSql markers. Contains no Spring component, no configuration, and no static
+    mutable state — consumers wire one executor bean themselves (D3).
+  </description>
+
+  <properties>
+    <!-- The dependency-surface declaration (D3 ADR): resolution core is RELATIONAL-ONLY.
+         spring-data-r2dbc belongs to the execution module, never here. -->
+    <spring-data-relational.version>3.5.12</spring-data-relational.version>
+    <junit.version>5.13.1</junit.version>
+    <assertj-core.version>3.27.7</assertj-core.version>
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-relational</artifactId>
+      <version>${spring-data-relational.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj-core.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <release>${java.release}</release>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+          </compilerArgs>
+          <failOnWarning>true</failOnWarning>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven-jar-plugin.version}</version>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <!-- JPMS posture (D3 ADR dependency-surface declaration): stable automatic module
+                   name now, module-info deferred until the module graph is stable. -->
+              <Automatic-Module-Name>io.github.vadimbabich.entitymetamodel.runtime</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

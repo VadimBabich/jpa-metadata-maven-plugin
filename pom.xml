@@ -27,6 +27,7 @@
 
   <modules>
     <module>jpa-metadata-maven-plugin</module>
+    <module>entity-metamodel-runtime</module>
   </modules>
 
   <properties>
