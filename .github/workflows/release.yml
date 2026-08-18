@@ -30,11 +30,16 @@ jobs:
           cache: 'maven'
           server-id: github
 
+      # A release without the license text in the artifact tree is a defect class this
+      # repo has already shipped once (WS-11 defect list, R7) — fail fast, before Maven runs.
+      - name: Require LICENSE in the checkout
+        run: test -f LICENSE
+
       - name: Configure Git
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/VadimBabich/jpa-metadata-maven-plugin.git
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
       - name: Release with Maven Release Plugin
         env:
