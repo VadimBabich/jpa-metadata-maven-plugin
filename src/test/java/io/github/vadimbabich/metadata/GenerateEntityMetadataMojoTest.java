@@ -216,4 +216,79 @@ public class GenerateEntityMetadataMojoTest {
 
     assertThat(expectedFile).is(new HasStaticFields(List.of("ID")));
   }
+
+  // ---------------------------------------------------------------------------------------------
+  // Aggregate-semantics witnesses (WS-2 semantic-coverage matrix, _doc/design/).
+  //
+  // These tests pin CURRENT behavior, observed first and asserted second — they are executable
+  // matrix citations, not desired-behavior specs. The @Column presence-only filter decides
+  // inclusion; aggregate semantics (@Embedded, @MappedCollection, @Transient) are invisible to it.
+  // ---------------------------------------------------------------------------------------------
+
+  @Test
+  void currentBehavior_embeddedFieldSilentlyDropped_butEmbeddedWithColumnIncluded()
+      throws Exception {
+    mojo.packageName = "com.example.aggregates";
+
+    mojo.execute();
+
+    File invoiceFile = tempDir.resolve("com/example/aggregates/Invoice_.java").toFile();
+    Assertions.assertTrue(invoiceFile.exists(), "Expected Invoice_.java to be generated");
+
+    // billingAddress (@Embedded, no @Column) is dropped — for want of @Column, not because the
+    // pipeline understands embedding. shippingAddress (@Embedded + @Column) is INCLUDED: a
+    // semantically wrong constant — an embedded object has no single column, and the constant
+    // throws lazily at first use (matrix runtime-consequence note).
+    assertThat(invoiceFile)
+        .is(new HasStaticFields(List.of("ID", "SHIPPING_ADDRESS", "TOTAL_AMOUNT")));
+  }
+
+  @Test
+  void currentBehavior_mappedCollectionSilentlyDropped() throws Exception {
+    mojo.packageName = "com.example.aggregates";
+
+    mojo.execute();
+
+    File orderFile = tempDir.resolve("com/example/aggregates/Order_.java").toFile();
+    Assertions.assertTrue(orderFile.exists(), "Expected Order_.java to be generated");
+
+    // items (@MappedCollection) is dropped for want of @Column; the one-to-many relationship
+    // leaves no trace in the metamodel.
+    assertThat(orderFile).is(new HasStaticFields(List.of("ID", "PLACED_AT")));
+  }
+
+  @Test
+  void currentBehavior_transientWithColumnIncluded_lifecycleAnnotationsInvisible()
+      throws Exception {
+    mojo.packageName = "com.example.aggregates";
+
+    mojo.execute();
+
+    File shipmentFile = tempDir.resolve("com/example/aggregates/Shipment_.java").toFile();
+    Assertions.assertTrue(shipmentFile.exists(), "Expected Shipment_.java to be generated");
+
+    // The decisive W5 witness: draftNote is @Transient — Spring excludes it from the mapping
+    // context — yet the presence-only filter includes DRAFT_NOTE, a constant that throws lazily
+    // at first dereference. cachedLabel (bare @Transient) is dropped only because it lacks
+    // @Column. @Version/@InsertOnlyProperty/@Sequence pass through invisibly.
+    assertThat(shipmentFile).is(new HasStaticFields(
+        List.of("ID", "CARRIER", "DRAFT_NOTE", "VERSION", "CREATED_AT")));
+  }
+
+  @Test
+  void currentBehavior_nonTableAggregateMembersGetNoMetamodel() throws Exception {
+    mojo.packageName = "com.example.aggregates";
+
+    mojo.execute();
+
+    File billingAddressFile =
+        tempDir.resolve("com/example/aggregates/BillingAddress_.java").toFile();
+    File orderItemFile = tempDir.resolve("com/example/aggregates/OrderItem_.java").toFile();
+
+    Assertions.assertFalse(billingAddressFile.exists(),
+        "BillingAddress has no @Table, so no metamodel — its columns exist only prefixed"
+            + " inside the owning entity's table");
+    Assertions.assertFalse(orderItemFile.exists(),
+        "OrderItem has no @Table, so no metamodel despite its @Column fields");
+  }
 }

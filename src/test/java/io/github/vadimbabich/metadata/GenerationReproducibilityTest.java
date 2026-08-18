@@ -28,6 +28,7 @@ class GenerationReproducibilityTest {
 
   static List<String> fixturePackages() {
     return List.of(
+        "com.example.aggregates",
         "com.example.entities",
         "com.example.inherited",
         "com.example.nested",
