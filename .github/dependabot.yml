@@ -1,0 +1,18 @@
+# Version updates for the reactor's POMs and the pinned workflow actions.
+# Modest PR limits: solo-maintained repository.
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directories:
+      - "/"
+      - "/jpa-metadata-maven-plugin"
+      - "/entity-metamodel-core"
+      - "/entity-metamodel-runtime"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3

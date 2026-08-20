@@ -1,9 +1,10 @@
 name: Release
 
-# Releases are explicit: manual dispatch only. maven-release-plugin creates the
-# release commit and the v* tag itself, so a tag trigger would double-release.
-# The Maven Central publication path is a WS-11 deliverable; until then the
-# artifact is deployed to GitHub Packages.
+# Releases are explicit: manual dispatch only. The reactor is mixed-version
+# by design, so maven-release-plugin is retired: releasing from the root
+# would cut every module of the family at once and tag it as the parent. The scoped
+# versions:set + per-line deploy flow that replaces it is not wired yet, so this workflow
+# refuses until it lands — refusing is safe, half-releasing is not.
 on:
   workflow_dispatch:
 
@@ -14,30 +15,19 @@ jobs:
   release:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0  # Required for maven-release-plugin to push tags/commits
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-          server-id: github
+      # A release without the license text in the artifact tree is a defect class this
+      # repo has already shipped once — fail fast, before Maven runs.
+      - name: Require LICENSE in the checkout
+        run: test -f LICENSE
 
-      - name: Configure Git
+      - name: Refuse to release until the scoped flow lands
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/VadimBabich/jpa-metadata-maven-plugin.git
-
-      - name: Release with Maven Release Plugin
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mvn -B release:prepare release:perform
+          echo "::error::Release is blocked, and there is no manual path either. Every module"\
+               "still parents to entity-metamodel-parent:2.0.0-SNAPSHOT, so any release cut"\
+               "now publishes a POM whose parent resolves nowhere. Running release:prepare by"\
+               "hand offers to substitute an unpublished parent version and then tags — do not."\
+               "Wire the scoped versions:set + per-line deploy flow first."
+          exit 1

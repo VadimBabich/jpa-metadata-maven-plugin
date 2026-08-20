@@ -168,13 +168,16 @@ While the example uses a specific condition (filter by attribute value), the rea
 When the plugin runs, it logs a summary like:\
 
 ```
- Generating metadata for 'com.example.model' package with language level 'JAVA_17'
- Total found 5 entity classes. Metadata generated in: '/target/generated-sources/r2dbc'
- Included entities:
-  • User
-   ↳ Address
-  • Product
-   ```
+Generating metadata for 'com.example.model' package with language level 'JAVA_17'
+Generated metadata for 5 entity classes into: '/target/generated-sources/metamodel'
+Included entities:
+ • User
+  ↳ Address
+ • Product
+```
+
+The first and second lines are format-checked against the plugin's actual output by the
+integration test (`jpa-metadata-maven-plugin/src/it/simple-consumer/verify.groovy`); the entity tree is illustrative.
 
 ---
 

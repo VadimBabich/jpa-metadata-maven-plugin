@@ -1,0 +1,28 @@
+name: Use case
+description: Tell us what you are building and what this tool would need to do for you.
+labels: ["use-case"]
+body:
+  - type: textarea
+    id: what-building
+    attributes:
+      label: What are you building?
+      description: The kind of application/service and how entity metadata or query construction shows up in it.
+    validations:
+      required: true
+  - type: dropdown
+    id: stack
+    attributes:
+      label: Which stack?
+      options:
+        - Spring Data R2DBC
+        - Spring Data JDBC
+        - Other (describe below)
+    validations:
+      required: true
+  - type: textarea
+    id: adoption
+    attributes:
+      label: What would make you adopt this?
+      description: The missing feature, guarantee, or integration that currently stops you.
+    validations:
+      required: true

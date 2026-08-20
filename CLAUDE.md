@@ -1,71 +1,68 @@
 # Agent Instructions
 
-Committed and public: never add production-system identifiers or evidence-corpus quotes here.
+Committed and public. Never add private-material paths, production-system identifiers, or
+quotes from third-party source held under licence. Maintainer-local rules — including the map
+of private design records — live in the uncommitted `CLAUDE.local.md`.
 
 **This repository:** the shipping 1.x `jpa-metadata-maven-plugin` (JavaParser-based Maven Mojo
 generating entity metamodels for Spring Data R2DBC), plus the paper design program for its v2
-reboot as a JSR-269 annotation processor with an owned runtime library. No v2 code exists —
-read the design documents before writing any.
+reboot as a JSR-269 annotation processor with an owned runtime library. The v2 design is
+recorded privately; read it before writing any v2 code.
 
 ## Hard rails — violations are one-way doors
 
-1. **`_doc/` never enters git.** It is private working material and holds another party's
-   proprietary source (`_doc/repo_usage/`, `_doc/repository/` — the evidence corpus). Never
-   weaken the `.gitignore` entries; never quote its contents into committed files.
-   Rationale: `_doc/adr/adr-corpus-restore-vs-reattest.md`.
+1. **Private working material never enters git.** It includes third-party source held under
+   licence. Never weaken the `.gitignore` entries that exclude it, and never quote its
+   contents — or cite its paths and filenames — from committed files. CI enforces the
+   backstop; `.gitignore` is the primary guard.
 2. **Never `git add .` or `git add -A`.** Stage explicit paths only.
 3. **Push only via the SSH alias `github.com-vadimbabich`** (account isolation). Never point
    `origin` at a plain `github.com` URL.
-4. **Golden corpus** (`src/it/simple-consumer/expected/**`): any change — including formatting
-   and comments — requires an approving ADR that already exists and is **named in the commit
-   message**, since the private ADRs cannot ride the same diff. Generated output must stay
-   byte-deterministic: no dates, no environment-dependent content. Procedure:
+4. **Golden corpus** (`jpa-metadata-maven-plugin/src/it/simple-consumer/expected/**`): any
+   change — including formatting and comments — requires an approving decision record that
+   already exists and is **named in the commit message**, since those records are not
+   committed and cannot ride the same diff. Generated output must stay byte-deterministic: no
+   dates, no environment-dependent content. Procedure:
    `docs/runbooks/golden-corpus-update.md`.
-5. **Corpus-derived quantities keep their provenance marker** (`[review-time]` = provisional,
-   or attested). Never restate them as verified facts. Procedure:
-   `docs/runbooks/corpus-verification.md`.
+5. **Quantities derived from private evidence keep their provenance marker** (`[review-time]` =
+   provisional, or attested). Never restate them as verified facts, and never reproduce the
+   evidence itself.
 6. **Never commit credentials, tokens or keys.** CI scans full history with gitleaks, but it
    only *detects*: a secret in a pushed commit is compromised and must be **rotated** —
    rewriting history does not undo it.
 
 ## Documents
 
-`docs/` is committed and must be publishable as-is. `_doc/` is private and gitignored. Put new
-files on the correct side.
+`docs/` is committed and must be publishable as-is. Everything else — the design paper,
+decision records, plans and investigations — is private and gitignored. Put new files on the
+correct side, and keep committed files free of references to the private side.
 
-- `_doc/hld-entity-metamodel.md` — the v2 HLD (§5 decision log, §8 open questions).
-- `_doc/adr/` — twelve ADRs, one per HLD §8 question. Read the relevant one before proposing a
-  decision; contradicting an ADR requires new evidence, not preference. Cite ADRs in commit
-  messages by filename.
-- `_doc/plans/`, `_doc/investigations/` — one file per workstream, WS-1 to WS-14.
-- `docs/runbooks/` — corpus verification (G0), golden-corpus update, durability bundle (R-P0),
-  ADR method. Follow them rather than re-deriving the procedures.
+- `docs/runbooks/golden-corpus-update.md` — the corpus procedure. Follow it rather than
+  re-deriving it.
+- `docs/reactive-code-style.md` — the reactive rule set (hand-written runtime, generated output,
+  tests). Read it before writing or emitting a single reactive line; its §1 and §8 are contractual.
+- `CLAUDE.local.md` (uncommitted) — where the private records live and what they decide.
 
-## Current state (2026-08-16)
+## Current state (2026-08-20)
 
-- Shipping: the 1.x Mojo at `1.1.0-SNAPSHOT`; `master` is pushed to `origin`. Code lives in
-  `src/main/java/io/github/vadimbabich/metadata/`: `parser/` (JavaParser) → `graph/` →
-  `generator/` (JavaPoet), behind `api/`.
-- v2 — annotation processor, runtime library, fluent query API — is designed on paper and
-  gated. None of it is built.
-- **All twelve ADRs are Proposed; none ratified.** Several propose revising things the HLD
-  states as decided (generated-class naming default, an AOT claim, the "no Spring types in
-  public signatures" rule, declaration-order determinism). Treat the HLD as the ratified record
-  and the ADRs as proposals against it. Concretely: `pom.xml` enforces Maven `[3.9,)` while
-  `_doc/adr/adr-maven-consumption-floor.md` proposes 3.6.3 — do not change the POM until it is
-  ratified.
-- Gates, in order: R-P0 (durability + the R-P0.1 publicness decision) → G0 (corpus closure) →
-  naming/legal ADRs → model⇄contract⇄runtime review → D1 (generated-shape freeze) → combined
-  spike → D2 (incremental category) → processor to parity → API freeze → 2.0.0.
-- **`_doc/` survives only as local files** — in no commit and no bundle until
-  `docs/runbooks/durability-bundle.md` step 3 runs.
+- Shipping: the 1.x Mojo at `1.1.0-SNAPSHOT`; `master` is pushed to `origin`. Its code lives in
+  `jpa-metadata-maven-plugin/src/main/java/io/github/vadimbabich/metadata/`: `parser/`
+  (JavaParser) → `graph/` → `generator/` (JavaPoet), behind `api/`.
+- `entity-metamodel-core` and `entity-metamodel-runtime` exist at `2.0.0-SNAPSHOT`; the
+  annotation processor, the r2dbc execution module and the fluent query API do not.
+- **The v2 decisions are proposals, not settled.** Several would revise things the design paper
+  states as decided. Do not pre-apply a proposal to committed artifacts. Concretely: `pom.xml`
+  enforces Maven `[3.9,)` while a pending decision proposes lowering it to 3.6.3 — leave the
+  POM alone until that is resolved.
+- Publication is gated: nothing in the family has been released, and the release workflow
+  refuses by design (see below).
 
 ## Branching and releases
 
 - Work on `master` through short-lived `feature/YYYY.MM_short-desc` branches. Commit or push
   only when asked.
 - **No long-lived `2.x` or `develop` branch.** v2 ships as milestones cut from `master`
-  (`2.0.0-M1` → `-RC1` → `2.0.0`, per `_doc/adr/adr-initial-version-line.md`). A version branch
+  (`2.0.0-M1` → `-RC1` → `2.0.0`). A version branch
   is unworkable here: 1.x's remaining releases depend on v2 artifacts — runtime/core publishes
   at `2.0.0-M1` before the 1.x release that consumes it — and the golden corpus is the shared
   1.x⇄v2 parity contract.
@@ -73,9 +70,12 @@ files on the correct side.
 - Releases are dispatch-triggered (`.github/workflows/release.yml`); milestones and RCs take the
   same path. Tag as `v<version>`, matching `v1.1.0` — the unprefixed `1.0.0` is a known
   inconsistency; do not add more.
-- **Do not** split the single-module POM into parent + modules, and do not rename the repo or
-  coordinates. The rename is decided in principle but WS-1 owns the deliverable; restructuring
-  first means doing the same surgery twice.
+- **No release path is wired today and `release:prepare` must not be run by hand.** The workflow
+  refuses on purpose: every module parents to `2.0.0-SNAPSHOT`, so a release cut now publishes an
+  unresolvable parent, and the interactive prompt happily substitutes an unpublished version and
+  tags. Wire the scoped `versions:set` + per-line deploy flow before releasing anything.
+- **Do not rename the repository or the published coordinates.** The rename is decided in
+  principle but not scheduled; the retiring 1.x artifact keeps its coordinates either way.
 
 ## Code style
 
@@ -93,6 +93,21 @@ Optimize for scanning, not compactness.
 - `src/main/java` declares explicit types today (no `var`). Match the file you are editing
   rather than introducing a second style.
 
+**Reactive code** — full rules in `docs/reactive-code-style.md`; read it before writing or emitting
+reactive code. The non-negotiables, because they are the ones violated silently:
+
+- **Never** block, schedule (`subscribeOn`/`publishOn`/`Schedulers`), `subscribe()`, or embed policy
+  (`timeout`/`retryWhen`/`cache`/`onErrorContinue`) in library or generated code. Latency and retry
+  budgets are the consumer's; blocking one event-loop thread stalls every request it multiplexes.
+- **Defer every fallback that costs anything**: `switchIfEmpty(Mono.defer(...))` or
+  `Mono.error(Supplier)` — the eager form builds the exception, stack trace and all, on the happy
+  path too. Never `Mono.just(someCall())`.
+- A named publisher is a *description*: two subscriptions run the I/O twice. Compose once.
+- Bound `flatMap` concurrency against the connection pool; pick `concatMap` when order matters.
+- Generated code is immutable, stateless, I/O-free and deterministic in emission order (rail 4).
+- Tests assert signals with `StepVerifier`, including an error and a cancellation path; `block()`
+  belongs in fixtures, never in an assertion.
+
 **Comments and JavaDoc.** Comments explain *why*: a constraint, a workaround, a non-obvious
 rule. Delete anything that restates the code. JavaDoc on public API only, one or two sentences,
 never a restatement of the signature. One carve-out: JavaDoc on Mojo `@Parameter` fields is
@@ -106,8 +121,9 @@ Compiles at release 17 (`<java.release>`, enforcer floor `[17,)`) — write Java
 runs `mvn -B verify` on JDK 17, 21 and 25.
 
 `mvn -B verify` runs the unit tests plus the invoker IT, which generates against
-`src/it/simple-consumer` and byte-compares the golden corpus. Tests are JUnit 5 + AssertJ +
-Mockito over fixtures in `src/test/resources/projects/simple-project`;
+`jpa-metadata-maven-plugin/src/it/simple-consumer` and byte-compares the golden corpus. Tests
+are JUnit 5 + AssertJ + Mockito over fixtures in
+`jpa-metadata-maven-plugin/src/test/resources/projects/simple-project`;
 `GenerationReproducibilityTest` generates twice and asserts byte-identical, date-free output —
 extend it when generator output changes.
 

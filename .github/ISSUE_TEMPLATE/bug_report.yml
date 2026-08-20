@@ -1,0 +1,40 @@
+name: Bug report
+description: Something the plugin does wrong — generation failure, wrong output, build breakage.
+labels: ["bug"]
+body:
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: jdk
+    attributes:
+      label: JDK version
+      placeholder: "temurin 21.0.4"
+    validations:
+      required: true
+  - type: input
+    id: spring-versions
+    attributes:
+      label: Spring Data Relational / R2DBC versions
+      placeholder: "spring-data-relational 4.0.3, spring-data-r2dbc 4.0.3"
+    validations:
+      required: false
+  - type: textarea
+    id: entity-sample
+    attributes:
+      label: Minimal entity sample
+      description: The smallest entity class (or classes) that reproduces the problem.
+      render: java
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected vs actual
+      description: What you expected the plugin to generate or do, and what happened instead. Include the relevant build log lines.
+    validations:
+      required: true

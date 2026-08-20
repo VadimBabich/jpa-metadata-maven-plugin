@@ -40,11 +40,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      # The disclosure risk in this repository is proprietary source, not only
-      # credentials: _doc/ (program paper, ADRs) and the evidence corpus must never be
-      # tracked. .gitignore is the primary guard; this is the backstop that survives an
-      # ignore being weakened. See _doc/adr/adr-corpus-restore-vs-reattest.md.
-      - name: Fail if _doc/ or the evidence corpus is tracked
+      # The disclosure risk here is proprietary source, not only credentials: private
+      # working material must never be tracked. .gitignore is the primary guard; this is the
+      # backstop that survives an ignore being weakened.
+      - name: Fail if private material is tracked
         run: |
           hits=$(git ls-files | grep -E '^(_doc/|docs/(repo_usage|repository)/)' || true)
           if [ -n "$hits" ]; then
