@@ -1,4 +1,4 @@
-# Combined processor spike (WS-10)
+# Combined processor spike
 
 **Throwaway evidence asset. Never published, never in the root reactor.** Version `0-SPIKE` exists so
 that nothing can accidentally release it. The root `pom.xml` has packaging `maven-plugin` and no
@@ -27,14 +27,14 @@ once, by one asset:
 - Not a real processor: no owned metadata model, no JavaPoet, no options surface, no naming strategy.
   The emitted text is a fixed template, not a design.
 - **Reproducing the 1.x shape is not an endorsement of it.** The golden corpus is a pre-D1 regression
-  baseline; its known defects are listed in `src/it/simple-consumer/expected/README.md`. D1 freezes the
+  baseline; its known defects are listed in `jpa-metadata-maven-plugin/src/it/simple-consumer/expected/README.md`. D1 freezes the
   shape, and D1 has not happened.
 - `@SpikeReferences` is deliberately *not* named `@References`. The relationship vocabulary — name,
   retention, coordinates — is an open decision that this asset must not pre-empt.
 
 ## Relationship to the golden corpus
 
-The spike **reads** `src/it/simple-consumer/` and never writes it. Entity sources and golden files are
+The spike **reads** `jpa-metadata-maven-plugin/src/it/simple-consumer/` and never writes it. Entity sources and golden files are
 referenced in place rather than copied, so there is no second copy that can silently diverge. The
 corpus remains the single authority for what the 1.x shape is.
 

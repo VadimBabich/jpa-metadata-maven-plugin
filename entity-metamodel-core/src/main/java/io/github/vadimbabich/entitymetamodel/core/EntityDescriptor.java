@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Everything a frontend knows about one entity type: identity, declared table name, own
- * attributes in declaration order, supertype contributions in extends order, and nested entities
- * mirroring source nesting. Immutable; built once by a frontend, read by generators.
+ * Everything a frontend knows about one entity type. Attributes keep declaration order and
+ * supertypes extends order; built once by a frontend, read by generators.
  */
 public record EntityDescriptor(
     String qualifiedName,

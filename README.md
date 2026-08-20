@@ -177,7 +177,7 @@ Included entities:
 ```
 
 The first and second lines are format-checked against the plugin's actual output by the
-integration test (`src/it/simple-consumer/verify.groovy`); the entity tree is illustrative.
+integration test (`jpa-metadata-maven-plugin/src/it/simple-consumer/verify.groovy`); the entity tree is illustrative.
 
 ---
 

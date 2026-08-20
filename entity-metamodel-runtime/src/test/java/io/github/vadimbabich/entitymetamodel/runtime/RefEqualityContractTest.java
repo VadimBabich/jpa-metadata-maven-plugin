@@ -7,10 +7,9 @@ import io.github.vadimbabich.entitymetamodel.runtime.fixtures.Account;
 import org.junit.jupiter.api.Test;
 
 /**
- * The ratified ref-equality contract (review unit, 2026-08-18): value identity over
- * {@code (entityType, propertyName, alias)} — alias INCLUDED, because distinct aliases are
- * distinct table instances by J2's own semantics. The 1.x {@code Column_}'s context-dependent,
- * asymmetric equals is the recorded anti-pattern these tests keep dead.
+ * Value identity over {@code (entityType, propertyName, alias)} — alias included, because distinct
+ * aliases are distinct table instances. The 1.x {@code Column_}'s asymmetric equals is the
+ * anti-pattern these tests keep dead.
  */
 class RefEqualityContractTest {
 
@@ -51,7 +50,7 @@ class RefEqualityContractTest {
     PropertyRef<Account, Long> ref = EntityRef.of(Account.class).property("id", Long.class);
     PropertyRef<Account, Long> same = EntityRef.of(Account.class).property("id", Long.class);
 
-    // The 1.x defect was asymmetry (column_.equals(column) true, column.equals(column_) false).
+    // The 1.x defect was asymmetry: column_.equals(column) true, column.equals(column_) false.
     assertThat(ref.equals(same)).isEqualTo(same.equals(ref));
     assertThat(ref.equals(null)).isFalse();
     assertThat(ref.equals("id")).isFalse();
@@ -75,10 +74,25 @@ class RefEqualityContractTest {
   void theProjectionSeparatorIsReservedInAliases() {
     EntityRef<Account> account = EntityRef.of(Account.class);
 
-    // Layer-2 rule (alias spec): "__" separates <tableAlias>__<column> in projected labels; an
-    // alias containing it would corrupt hydration boundaries. Asserted at construction.
     assertThatIllegalArgumentException()
         .isThrownBy(() -> account.as("legacy__copy"))
         .withMessageContaining("__");
+  }
+
+  @Test
+  void aQualifierThatWouldComposeTheSeparatorIsRejected() {
+    EntityRef<Account> account = EntityRef.of(Account.class);
+
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> account.as("_copy"))
+        .withMessageContaining("__");
+  }
+
+  @Test
+  void reAliasingExtendsTheAliasInsteadOfReplacingTheQualifier() {
+    EntityRef<Account> account = EntityRef.of(Account.class);
+
+    assertThat(account.as("a").as("b").alias()).isEqualTo("account_a_b");
+    assertThat(account.as("a").as("b")).isNotEqualTo(account.as("b"));
   }
 }

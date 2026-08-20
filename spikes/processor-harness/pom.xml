@@ -7,7 +7,7 @@
   <version>0-SPIKE</version>
   <packaging>jar</packaging>
 
-  <name>Combined processor spike (WS-10)</name>
+  <name>Combined processor spike</name>
   <description>
     Throwaway evidence asset. Answers three program questions with one minimal JSR-269 processor:
     golden-file byte parity, test-harness comparison across JDKs, and Gradle incremental-processing
@@ -18,7 +18,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>17</maven.compiler.release>
 
-    <!-- Matches the integration test's consumer (src/it/simple-consumer/pom.xml), because the
+    <!-- Matches the integration test's consumer (jpa-metadata-maven-plugin/src/it/simple-consumer/pom.xml), because the
          spike compiles that consumer's entity sources against the same substrate. -->
     <spring-data-r2dbc.version>3.5.0</spring-data-r2dbc.version>
 
@@ -29,7 +29,7 @@
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
 
-    <!-- Under comparison; versions are the field data the harness ADR cites. -->
+    <!-- Under comparison; these versions are the field data the harness report cites. -->
     <compile-testing.version>0.23.0</compile-testing.version>
     <cute.version>1.9.0</cute.version>
   </properties>

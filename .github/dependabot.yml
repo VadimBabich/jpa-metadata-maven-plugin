@@ -1,5 +1,5 @@
 # Version updates for the reactor's POMs and the pinned workflow actions.
-# Modest PR limits: solo-maintained repository (WS-11 noise guard).
+# Modest PR limits: solo-maintained repository.
 version: 2
 updates:
   - package-ecosystem: "maven"

@@ -25,6 +25,11 @@ import org.apache.maven.plugin.logging.Log;
  */
 public class R2DbcEntityTemplateStaticHolderGeneratorJava implements JavaClassGenerator {
 
+  private static final ClassName LAZY = ClassName.get("org.springframework.data.util", "Lazy");
+
+  private static final ClassName R2DBC_ENTITY_TEMPLATE =
+      ClassName.get("org.springframework.data.r2dbc.core", "R2dbcEntityTemplate");
+
   private final File outputDir;
   private final Log log;
   private final ClassName r2dbcHolder;
@@ -45,28 +50,21 @@ public class R2DbcEntityTemplateStaticHolderGeneratorJava implements JavaClassGe
   public void generateSourceFile() throws IOException {
     TypeSpec clazz = buildTypeSpec();
     writeJavaFile(clazz);
-    log.debug(String.format("%s.java has been generated at target/generated-sources: %s.",
-        r2dbcHolder.simpleName(), outputDir.getAbsolutePath()));
+    log.debug(String.format(GENERATED_FILE_LOG_FORMAT, r2dbcHolder.simpleName(),
+        outputDir.getAbsolutePath()));
   }
 
   private FieldSpec createFieldSpecs() {
-    ClassName lazy = ClassName.get("org.springframework.data.util", "Lazy");
-    ClassName r2dbcEntityTemplate = ClassName.get("org.springframework.data.r2dbc.core",
-        "R2dbcEntityTemplate");
-
-    return FieldSpec.builder(ParameterizedTypeName.get(lazy, r2dbcEntityTemplate),
+    return FieldSpec.builder(ParameterizedTypeName.get(LAZY, R2DBC_ENTITY_TEMPLATE),
             "r2dbcEntityTemplate")
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
         .build();
   }
 
   private MethodSpec createGetTemplateMethod() {
-    ClassName r2dbcEntityTemplate = ClassName.get("org.springframework.data.r2dbc.core",
-        "R2dbcEntityTemplate");
-
     return MethodSpec.methodBuilder("getTemplate")
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .returns(r2dbcEntityTemplate)
+        .returns(R2DBC_ENTITY_TEMPLATE)
         .beginControlFlow("if (r2dbcEntityTemplate == null)")
         .addStatement("throw new $T(\n\t$S)", IllegalStateException.class,
             "StaticR2dbcEntityTemplateAccessor_ has not been initialized yet. Ensure it is registered as a Spring bean.")
@@ -102,7 +100,7 @@ public class R2DbcEntityTemplateStaticHolderGeneratorJava implements JavaClassGe
   }
 
   private MethodSpec createGetTableSimpleMethod() {
-    ClassName table = ClassName.get("org.springframework.data.relational.core.sql", "Table");
+    ClassName table = ClassName.get(SQL_PACKAGE, "Table");
 
     return MethodSpec.methodBuilder("getTable")
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -113,9 +111,8 @@ public class R2DbcEntityTemplateStaticHolderGeneratorJava implements JavaClassGe
   }
 
   private MethodSpec createGetTableWithPrefixMethod() {
-    ClassName sqlIdentifier = ClassName.get("org.springframework.data.relational.core.sql",
-        "SqlIdentifier");
-    ClassName table = ClassName.get("org.springframework.data.relational.core.sql", "Table");
+    ClassName sqlIdentifier = ClassName.get(SQL_PACKAGE, "SqlIdentifier");
+    ClassName table = ClassName.get(SQL_PACKAGE, "Table");
 
     return MethodSpec.methodBuilder("getTable")
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -135,9 +132,6 @@ public class R2DbcEntityTemplateStaticHolderGeneratorJava implements JavaClassGe
     ClassName applicationContext = ClassName.get("org.springframework.context",
         "ApplicationContext");
     ClassName beansException = ClassName.get("org.springframework.beans", "BeansException");
-    ClassName lazy = ClassName.get("org.springframework.data.util", "Lazy");
-    ClassName r2dbcEntityTemplate = ClassName.get("org.springframework.data.r2dbc.core",
-        "R2dbcEntityTemplate");
 
     return MethodSpec.methodBuilder("setApplicationContext")
         .addAnnotation(Override.class)
@@ -145,7 +139,7 @@ public class R2DbcEntityTemplateStaticHolderGeneratorJava implements JavaClassGe
         .addParameter(applicationContext, "applicationContext")
         .addException(beansException)
         .addStatement("r2dbcEntityTemplate = $T.of(() -> applicationContext.getBean($T.class))",
-            lazy, r2dbcEntityTemplate)
+            LAZY, R2DBC_ENTITY_TEMPLATE)
         .build();
   }
 

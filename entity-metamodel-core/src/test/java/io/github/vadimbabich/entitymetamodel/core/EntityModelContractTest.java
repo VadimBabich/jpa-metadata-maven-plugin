@@ -8,10 +8,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * The model's ratified behavioral contract (ws2-model-specification): the entity collection has a
- * defined total order (§5.4 — qualified-name lexicographic, so any future aggregating output is
- * deterministic by construction); everything is deeply immutable (§7); the model carries
- * inheritance STRUCTURE while flattening stays a per-generator choice (§4).
+ * The model's behavioral contract: entities carry a total order by qualified name, everything is
+ * deeply immutable, and inheritance structure is carried rather than flattened.
  */
 class EntityModelContractTest {
 
@@ -37,8 +35,7 @@ class EntityModelContractTest {
         .attribute(attribute("amount", TypeRef.of("java.math.BigDecimal"), false))
         .build();
 
-    // §5.1: within-type order is declaration order — the frontend's reading order, carried
-    // untouched; sorting for emission is the GENERATOR's job, a different layer.
+    // Within-type order is the frontend's reading order; sorting for emission is the generator's job.
     assertThat(payment.attributes())
         .extracting(AttributeDescriptor::name)
         .containsExactly("id", "settledOn", "amount");
@@ -74,8 +71,7 @@ class EntityModelContractTest {
             .superType(base)
             .build();
 
-    // §4: representability is the model's obligation — own attributes stay own, supertype
-    // contributions stay attributed to their declaring type, in extends order.
+    // Own attributes stay own; contributions stay attributed to their declaring type.
     assertThat(legacyDocument.attributes()).extracting(AttributeDescriptor::name)
         .containsExactly("id");
     assertThat(legacyDocument.superTypes()).hasSize(1);
@@ -104,8 +100,6 @@ class EntityModelContractTest {
         "org.springframework.data.relational.core.mapping.Column",
         java.util.Map.of("value", "\"account_id\""));
 
-    // §6: annotation identity is (namespace, simple name); declared values are carried (Q3),
-    // resolution of effective SQL names stays runtime-side.
     assertThat(column.qualifiedName())
         .isEqualTo("org.springframework.data.relational.core.mapping.Column");
     assertThat(column.simpleName()).isEqualTo("Column");

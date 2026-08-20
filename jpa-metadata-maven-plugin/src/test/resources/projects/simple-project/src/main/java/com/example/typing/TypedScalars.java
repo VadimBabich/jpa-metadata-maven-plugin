@@ -8,10 +8,10 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Scalar typing witnesses for the WS-3 typing-fidelity study: primitives (the boxing rule),
+ * Scalar typing witnesses for the typing-fidelity study: primitives (the boxing rule),
  * a boxed-vs-primitive pair on one entity, enum, temporals, BigDecimal — and two acronym-bearing
  * property names, because the golden corpus exercises neither pass of the constant-name split
- * (spike report §5): {@code htmlURL} hits the lowercase→uppercase pass only; {@code sourceURLPath}
+ * {@code htmlURL} hits the lowercase→uppercase pass only; {@code sourceURLPath}
  * is the only witness of the acronym-boundary pass.
  */
 @Table("typed_scalars")

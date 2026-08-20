@@ -3,13 +3,9 @@ package io.github.vadimbabich.entitymetamodel.runtime;
 import java.util.Objects;
 
 /**
- * Immutable, typed join descriptor: one declared relationship from a source entity's FK property
- * to a target entity's property. Pure data — a JoinRef names a relationship, never an instance;
- * traversing the same relationship to a second or third table instance is the builder's job,
- * composed from {@link PropertyRef#of(EntityRef) re-anchoring}.
- *
- * <p>The shared value type {@code V} makes FK/target type compatibility a compile-time property
- * of generated code: a mismatched pair does not compile.
+ * Immutable join descriptor over a (source, target) property pair sharing one value type, which
+ * makes FK/target compatibility a compile-time property of generated code. A JoinRef names a
+ * relationship, never an instance — traversal composes from {@link PropertyRef#of(EntityRef)}.
  */
 public final class JoinRef<S, T> {
 
@@ -28,7 +24,6 @@ public final class JoinRef<S, T> {
     return new JoinRef<>(source, target);
   }
 
-  /** The FK property on the declaring entity. */
   public PropertyRef<S, ?> source() {
     return source;
   }

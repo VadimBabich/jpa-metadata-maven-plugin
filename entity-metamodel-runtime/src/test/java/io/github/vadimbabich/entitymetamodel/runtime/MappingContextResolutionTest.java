@@ -11,9 +11,8 @@ import org.springframework.data.relational.core.mapping.RelationalMappingContext
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 /**
- * Resolution delegates to Spring's mapping context — the standing keeper: SQL names are never
- * re-implemented, and no name is ever baked into a ref. These are the runtime-module forms of the
- * lifecycle note's LT-S1/LT-S2: with no component and no static, "context isolation" reduces to
+ * Resolution delegates to Spring's mapping context: SQL names are never re-implemented and no name
+ * is ever baked into a ref. With no component and no static state, context isolation reduces to
  * plain values answering only for the context they were handed.
  */
 class MappingContextResolutionTest {
@@ -23,8 +22,7 @@ class MappingContextResolutionTest {
     RelationalMappingContext mappingContext = new RelationalMappingContext();
     EntityRef<Account> account = EntityRef.of(Account.class);
 
-    // @Column("account_id") wins over any strategy; ownerEmail falls back to the default
-    // snake_case strategy — both answers are the context's, not ours.
+    // @Column wins over any strategy; ownerEmail falls back to the default snake_case strategy.
     assertThat(account.property("id", Long.class).columnName(mappingContext))
         .isEqualTo("account_id");
     assertThat(account.property("ownerEmail", String.class).columnName(mappingContext))
@@ -45,8 +43,7 @@ class MappingContextResolutionTest {
     PropertyRef<Account, String> ownerEmail =
         EntityRef.of(Account.class).property("ownerEmail", String.class);
 
-    // One ref, two contexts: each context's answer is its own — there is no shared state to
-    // contaminate (the demo proved the 1.x static holder fails exactly this).
+    // The 1.x static holder failed exactly this: one ref, two contexts, no shared state.
     assertThat(ownerEmail.columnName(defaultNaming)).isEqualTo("owner_email");
     assertThat(ownerEmail.columnName(shoutingNaming)).isEqualTo("OWNEREMAIL");
     assertThat(ownerEmail.columnName(defaultNaming)).isEqualTo("owner_email");
@@ -58,8 +55,7 @@ class MappingContextResolutionTest {
     PropertyRef<Account, String> bogus =
         EntityRef.of(Account.class).property("nope", String.class);
 
-    // The 1.x shape threw lazily at first dereference deep inside rendering; the runtime fails
-    // at the resolution call with a diagnosable message (lifecycle note S4's spirit).
+    // The 1.x shape threw lazily at first dereference, deep inside rendering.
     assertThatIllegalArgumentException()
         .isThrownBy(() -> bogus.columnName(mappingContext))
         .withMessageContaining("nope")
@@ -68,7 +64,6 @@ class MappingContextResolutionTest {
 
   @Test
   void nameIsTheCompileTimeAnswerAndNeedsNoContext() {
-    // PropertyRef.name() is the nameOf(...) drop-in — the 187-site migration path.
     assertThat(EntityRef.of(Account.class).property("ownerEmail", String.class).name())
         .isEqualTo("ownerEmail");
   }

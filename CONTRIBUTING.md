@@ -16,7 +16,8 @@ the source level is Java 17.
 
 Two things reviewers will hold your PR to:
 
-- **Golden corpus changes are deliberate.** Any diff under `src/it/simple-consumer/expected/`
+- **Golden corpus changes are deliberate.** Any diff under
+  `jpa-metadata-maven-plugin/src/it/simple-consumer/expected/`
   changes the plugin's output contract and needs an explicit rationale in the PR description.
 - **Reproducible output.** Generated code must stay byte-deterministic — no timestamps, no
   environment-dependent content. `GenerationReproducibilityTest` enforces this.

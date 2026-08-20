@@ -9,7 +9,7 @@ import org.springframework.data.relational.core.mapping.Table;
 /**
  * Parameterized-type witnesses: annotated collection, array, deeper generic, bounded wildcard,
  * and a typed-record field — the cases where {@code PropertyRef<E,T>}'s type argument is either
- * faithful or decorative (generic-fidelity requirement, model spec §2).
+ * faithful or decorative.
  */
 @Table("typed_collections")
 public record TypedCollections(

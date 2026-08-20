@@ -38,12 +38,14 @@ build/
 
 ### Mac OS ###
 .DS_Store
-### Private working material — the program paper, the ADRs, the evidence corpus and its
-### manifest. Publishing any of it is a separate, unresolved decision (R-P0.1). Do not
-### remove this entry.
+### Private working material, including third-party source held under licence. Publishing any
+### of it is a separate, unresolved decision. Do not remove this entry.
 _doc/
 
-### Old corpus locations (relocated to _doc/ 2026-08-16); kept to catch a re-copy.
-### docs/ is committed and publishable, so _doc/ above does not cover these.
+### Former locations of the same material; kept to catch a re-copy. docs/ is committed and
+### publishable, so the entry above does not cover these.
 docs/repo_usage/
 docs/repository/
+
+### Maintainer-local agent rules: names private paths, so it must never be committed.
+CLAUDE.local.md

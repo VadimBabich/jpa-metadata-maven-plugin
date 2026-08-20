@@ -7,7 +7,7 @@ import org.springframework.data.relational.core.mapping.Embedded;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Embedded-value witness (semantic-coverage matrix, Q5 row). The billing address uses the
+ * Embedded-value witness. The billing address uses the
  * documented full form with a prefix — Spring prepends it to every column of the embedded class,
  * which a name-per-field model cannot address. The shipping address deliberately carries BOTH
  * {@code @Embedded.Nullable} and {@code @Column}: the presence-only filter is expected to include

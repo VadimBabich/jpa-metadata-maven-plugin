@@ -9,14 +9,14 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("user_attributes")
 public record UserAttribute(
     @Id
-    @Column("uaat_id")
+    @Column("usat_id")
     Long attributeId,
 
-    @Column("uaat_user_id")
+    @Column("usat_user_id")
     String userId,
 
-    @Column("uaat_value")
-    String value
+    @Column("usat_value")
+    String attributeValue
 ) {
 
 }

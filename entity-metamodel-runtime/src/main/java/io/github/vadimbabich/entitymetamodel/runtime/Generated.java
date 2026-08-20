@@ -7,9 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a generated metamodel class. CLASS retention makes the marker visible to bytecode
- * tooling (JaCoCo excludes marked classes automatically); there are deliberately no date or
- * comment elements — reproducible output is a structural fact, not a discipline.
+ * Marks a generated metamodel class. CLASS retention keeps the marker visible to bytecode tooling
+ * such as JaCoCo; there are deliberately no date or comment elements.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)

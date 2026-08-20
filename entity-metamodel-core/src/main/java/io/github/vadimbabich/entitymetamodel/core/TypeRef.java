@@ -3,9 +3,8 @@ package io.github.vadimbabich.entitymetamodel.core;
 import java.util.List;
 
 /**
- * An exact declared Java type: raw name, type arguments and array dimensions carried verbatim —
- * the fidelity that makes a generated {@code PropertyRef<E,T>} type parameter usable rather than
- * decorative.
+ * An exact declared Java type, carried verbatim — the fidelity that makes a generated
+ * {@code PropertyRef<E,T>} type argument usable rather than decorative.
  */
 public record TypeRef(String qualifiedName, List<TypeRef> typeArguments, int arrayDimensions) {
 
@@ -26,7 +25,10 @@ public record TypeRef(String qualifiedName, List<TypeRef> typeArguments, int arr
   }
 
   public static TypeRef array(TypeRef componentType, int dimensions) {
-    return new TypeRef(componentType.qualifiedName(), componentType.typeArguments(), dimensions);
+    int totalDimensions = componentType.arrayDimensions() + dimensions;
+
+    return new TypeRef(
+        componentType.qualifiedName(), componentType.typeArguments(), totalDimensions);
   }
 
   /** Renders the declared type as Java source text, e.g. {@code java.util.List<java.lang.String>}. */

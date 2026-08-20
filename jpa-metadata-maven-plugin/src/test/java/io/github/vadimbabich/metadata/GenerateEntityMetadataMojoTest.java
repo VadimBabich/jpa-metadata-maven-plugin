@@ -77,7 +77,7 @@ public class GenerateEntityMetadataMojoTest {
     Assertions.assertTrue(userAttributeFile.exists(),
         "Expected UserAttribute_.java to be generated");
     assertThat(userAttributeFile)
-        .is(new HasStaticFields(List.of("ATTRIBUTE_ID", "USER_ID", "VALUE")));
+        .is(new HasStaticFields(List.of("ATTRIBUTE_ID", "USER_ID", "ATTRIBUTE_VALUE")));
 
     assertThat(mavenProject.getCompileSourceRoots())
         .as("generated sources registered as a compile source root")
@@ -217,13 +217,9 @@ public class GenerateEntityMetadataMojoTest {
     assertThat(expectedFile).is(new HasStaticFields(List.of("ID")));
   }
 
-  // ---------------------------------------------------------------------------------------------
-  // Aggregate-semantics witnesses (WS-2 semantic-coverage matrix, _doc/design/).
-  //
-  // These tests pin CURRENT behavior, observed first and asserted second — they are executable
-  // matrix citations, not desired-behavior specs. The @Column presence-only filter decides
-  // inclusion; aggregate semantics (@Embedded, @MappedCollection, @Transient) are invisible to it.
-  // ---------------------------------------------------------------------------------------------
+  // Aggregate-semantics witnesses. These pin CURRENT behavior, observed first and asserted second
+  // — not desired-behavior specs. The @Column presence-only filter decides inclusion; aggregate
+  // semantics (@Embedded, @MappedCollection, @Transient) are invisible to it.
 
   @Test
   void currentBehavior_embeddedFieldSilentlyDropped_butEmbeddedWithColumnIncluded()

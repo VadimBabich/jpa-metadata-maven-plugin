@@ -15,17 +15,9 @@
     The owned analysis model: immutable, dependency-free records describing what a frontend knows
     about an entity — identity, attributes with exact declared types, annotation facts, id-ness,
     nesting and inheritance structure. Frontends produce it; generators consume it. Deliberately
-    has ZERO dependencies (ADR-001). The vendor-neutral generation SPI joins additively once
-    WS-8's SPI specification lands — recorded deferral, not an omission.
+    has ZERO dependencies. The vendor-neutral generation SPI joins additively once its
+    specification lands — recorded deferral, not an omission.
   </description>
-
-  <properties>
-    <junit.version>5.13.1</junit.version>
-    <assertj-core.version>3.27.7</assertj-core.version>
-    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
-    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-  </properties>
 
   <dependencies>
     <dependency>
@@ -48,7 +40,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
         <configuration>
           <release>${java.release}</release>
           <compilerArgs>
@@ -61,13 +52,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
         <configuration>
           <archive>
             <manifestEntries>

@@ -10,7 +10,7 @@ import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Transient and lifecycle witness — a class, not a record, matching the production corpus shape.
+ * Transient and lifecycle witness — a class, not a record: the mixed-lifecycle entity shape.
  * The decisive case is {@code draftNote}: Spring excludes any {@code @Transient} property from the
  * mapping context, so a generated constant for it throws lazily at first use; the presence-only
  * {@code @Column} filter is expected to include it anyway.

@@ -7,10 +7,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an API entry point that accepts raw SQL fragments. Raw fragments bypass every safety the
- * typed surface provides — callers own quoting, identifier validity and, above all, injection
- * safety: never build the fragment from untrusted input; bind values are still passed as
- * parameters, never concatenated.
+ * Marks an API entry point that accepts raw SQL fragments, bypassing every safety the typed surface
+ * provides. Callers own quoting, identifier validity and injection safety: never build a fragment
+ * from untrusted input, and pass values as bind parameters.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)

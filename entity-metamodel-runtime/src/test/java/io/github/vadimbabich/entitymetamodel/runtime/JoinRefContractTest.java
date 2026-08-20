@@ -7,10 +7,9 @@ import io.github.vadimbabich.entitymetamodel.runtime.fixtures.Membership;
 import org.junit.jupiter.api.Test;
 
 /**
- * JoinRef contract (ws6-joinref-contract-extension): pure data over a (source, target) property
- * pair sharing one value type — FK-type compatibility is a compile-time property of generated
- * code, not a runtime check. Instance-parametric traversal (the owner's N-instance requirement)
- * composes from re-anchoring, so a JoinRef names a relationship, never an instance.
+ * FK-type compatibility is a compile-time property of generated code, not a runtime check, and a
+ * JoinRef names a relationship rather than an instance — N-instance traversal composes from
+ * re-anchoring.
  */
 class JoinRefContractTest {
 
@@ -48,9 +47,7 @@ class JoinRefContractTest {
     JoinRef<Membership, Account> account = JoinRef.of(
         MEMBERSHIP.property("accountId", Long.class), ACCOUNT.property("id", Long.class));
 
-    // The owner requirement (2026-08-18): one relationship, N target instances. The JoinRef
-    // stays instance-free; the builder re-anchors its target per instance — second and third
-    // instances are ordinary re-anchored refs, unbounded in count.
+    // One relationship, N target instances: re-anchored refs, unbounded in count.
     EntityRef<Account> second = ACCOUNT.as("2");
     EntityRef<Account> third = ACCOUNT.as("3");
 

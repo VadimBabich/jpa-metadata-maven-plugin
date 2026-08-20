@@ -3,9 +3,8 @@ package io.github.vadimbabich.entitymetamodel.core;
 import java.util.List;
 
 /**
- * One declared attribute: name, exact declared type, id-ness and its annotation facts. The model
- * carries facts for every declared attribute; which attributes a generator includes is the
- * inclusion algorithm's decision (ADR-004), applied downstream — never baked in here.
+ * One declared attribute. Facts are carried for every attribute; which ones a generator includes is
+ * the inclusion algorithm's decision, applied downstream.
  */
 public record AttributeDescriptor(
     String name, TypeRef declaredType, boolean id, List<AnnotationFact> annotations) {

@@ -55,11 +55,7 @@ public class MetadataCollector {
         .setLanguageLevel(this.languageLevel));
   }
 
-  /**
-   * Finds the {@code @Table} types declared under {@code packageName}.
-   *
-   * @throws IOException if the sources cannot be read
-   */
+  /** Finds the {@code @Table} types declared under {@code packageName}. */
   public Set<TypeDeclaration<?>> extractAnnotatedClasses(String packageName) throws IOException {
     log.debug(format("Collecting entities in package '%s' with language level '%s'", packageName,
         languageLevel));
@@ -87,9 +83,7 @@ public class MetadataCollector {
     }
   }
 
-  /**
-   * Returns the {@code @Column} field names of an entity, in declaration order.
-   */
+  /** The {@code @Column} field names of an entity, in declaration order. */
   public Set<String> collectColumnAnnotatedFieldNames(TypeDeclaration<?> entity) {
     if (entity instanceof RecordDeclaration recordDeclaration) {
       return collectFields(recordDeclaration);
@@ -101,7 +95,7 @@ public class MetadataCollector {
 
   private Set<String> collectFields(RecordDeclaration declaration) {
     return declaration.getParameters().stream()
-        .filter(parameter -> parameter.getAnnotationByName("Column").isPresent())
+        .filter(parameter -> parameter.getAnnotationByClass(Column.class).isPresent())
         .map(NodeWithSimpleName::getNameAsString)
         .collect(toUnmodifiableOrderedSet());
   }

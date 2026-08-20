@@ -6,12 +6,9 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentEnti
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 /**
- * Immutable, typed handle to one entity property on one {@link EntityRef table instance}. Pure
- * data: {@link #name()} is the compile-time answer; SQL names resolve on demand through a mapping
- * context and are never cached or re-implemented here.
- *
- * <p>Equality is value identity over {@code (entityType, propertyName, alias)}; the declared raw
- * type is diagnostic payload and deliberately not part of identity.
+ * Immutable, typed handle to one entity property on one {@link EntityRef table instance}. Equality
+ * is value identity over {@code (entityType, propertyName, alias)}; SQL names resolve on demand
+ * through a mapping context and are never cached here.
  */
 public final class PropertyRef<E, T> {
 
@@ -46,8 +43,8 @@ public final class PropertyRef<E, T> {
   }
 
   /**
-   * Resolves the column name through the given mapping context. Fails fast with the entity and
-   * property named when the property is not persistent in that context.
+   * Resolves the column name through the context, naming the entity and property when it is not
+   * persistent there.
    */
   public String columnName(RelationalMappingContext mappingContext) {
     Objects.requireNonNull(mappingContext, "mappingContext");

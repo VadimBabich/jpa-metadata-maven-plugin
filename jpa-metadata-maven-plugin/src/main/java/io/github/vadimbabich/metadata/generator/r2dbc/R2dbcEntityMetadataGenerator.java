@@ -128,7 +128,7 @@ public class R2dbcEntityMetadataGenerator implements EntityMetadataGenerator {
 
 
   private MethodSpec createGetTableMethodSpec(ClassName entityFullClassName) {
-    ClassName table = ClassName.get("org.springframework.data.relational.core.sql", "Table");
+    ClassName table = ClassName.get(JavaClassGenerator.SQL_PACKAGE, "Table");
 
     return MethodSpec.methodBuilder("getTable")
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -159,7 +159,7 @@ public class R2dbcEntityMetadataGenerator implements EntityMetadataGenerator {
     fields.forEach(fieldName -> {
       String constantName = toConstantName(fieldName);
       log.debug(format("Generating field %s.%s as %s", targetClassName, constantName,
-          extendedColumnClass));
+          columnClassName));
 
       classBuilder.addField(
           FieldSpec.builder(columnClassName, constantName, Modifier.PUBLIC, Modifier.STATIC,

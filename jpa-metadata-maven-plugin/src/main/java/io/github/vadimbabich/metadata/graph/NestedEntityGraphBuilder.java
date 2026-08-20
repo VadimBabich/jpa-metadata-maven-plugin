@@ -110,14 +110,16 @@ public class NestedEntityGraphBuilder implements EntityGraphBuilder {
     try {
       return type.resolve().asReferenceType().getQualifiedName();
     } catch (Exception ex) {
+      String assumedInScannedPackage = packageName + "." + type.getNameAsString();
+
       try {
         return collector.extractClasses("", t -> t.getNameAsString().equals(type.getNameAsString()))
             .stream()
             .map(this::getFullyQualifiedName)
             .findFirst()
-            .orElse(packageName + "." + type.getNameAsString());
+            .orElse(assumedInScannedPackage);
       } catch (IOException e) {
-        return packageName + "." + type.getNameAsString();
+        return assumedInScannedPackage;
       }
     }
   }

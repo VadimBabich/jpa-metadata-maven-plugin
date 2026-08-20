@@ -15,9 +15,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * The D3 invariant, made regression-proof (plan 04-ws4 step 5.3): no static mutable state
- * anywhere in this module — no non-final statics, and final statics only of known-immutable
- * types. WS-8's gate can adopt the same sweep.
+ * The D3 invariant: no static mutable state in this module — no non-final statics, and final
+ * statics only of known-immutable types.
  */
 class NoStaticMutableStateTest {
 

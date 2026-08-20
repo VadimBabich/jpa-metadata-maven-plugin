@@ -38,7 +38,7 @@ jobs:
   # Proves the reproducible-build mechanism off the maintainer's machine: two clean
   # test-skipped builds must produce byte-identical jars (project.build.outputTimestamp
   # pins the timestamps). JDK 21 = the release JDK. Cross-JDK/cross-OS comparison is a
-  # designed follow-up, deliberately not gated here (WS-11 architecture doc §4.4).
+  # designed follow-up, deliberately not gated here.
   reproducibility:
     runs-on: ubuntu-latest
     name: Reproducible build check
@@ -57,6 +57,9 @@ jobs:
           mvn -B clean package -DskipTests
           find . -path '*/target/*.jar' -not -path '*/it/*' -print0 | sort -z \
             | xargs -0 sha256sum > "$RUNNER_TEMP/first-build.sha256"
+          # An empty digest file compares equal to an empty digest file: without this the
+          # gate reports green when the jar glob stops matching (module move, target override).
+          test -s "$RUNNER_TEMP/first-build.sha256"
           mvn -B clean package -DskipTests
           find . -path '*/target/*.jar' -not -path '*/it/*' -print0 | sort -z \
             | xargs -0 sha256sum > "$RUNNER_TEMP/second-build.sha256"

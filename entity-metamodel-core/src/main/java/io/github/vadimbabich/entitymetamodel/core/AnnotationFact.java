@@ -3,9 +3,8 @@ package io.github.vadimbabich.entitymetamodel.core;
 import java.util.Map;
 
 /**
- * A declared annotation as a fact: identity is (namespace, simple name) — the FQN — and the
- * declared attribute values are carried as source-level literals. Resolution of effective SQL
- * names stays runtime-side; the model records what the source says, nothing more.
+ * A declared annotation carried as source-level literals. Effective SQL names resolve at runtime;
+ * the model records only what the source says.
  */
 public record AnnotationFact(String qualifiedName, Map<String, String> declaredValues) {
 

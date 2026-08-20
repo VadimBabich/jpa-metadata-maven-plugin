@@ -5,16 +5,15 @@ import java.util.Objects;
 import org.springframework.data.relational.core.mapping.RelationalMappingContext;
 
 /**
- * Immutable, instance-scoped handle to an entity type. Two instances of the same entity — the
- * default and any {@link #as(String) aliased copy} — are distinct table instances with distinct
- * identity; every name in a statement derives from the instance's alias, never the class.
+ * Immutable, instance-scoped handle to an entity type. The default instance and any
+ * {@link #as(String) aliased copy} are distinct table instances: every name in a statement derives
+ * from the instance's alias, never from the class.
  */
 public final class EntityRef<E> {
 
   /**
-   * Reserved projected-label separator ({@code <tableAlias>__<column>}); forbidden inside
-   * aliases because a duplicate label makes R2DBC's {@code Row.get(String)} return the first
-   * match silently.
+   * Reserved projected-label separator ({@code <tableAlias>__<column>}); forbidden inside aliases
+   * because a duplicate label makes R2DBC's {@code Row.get(String)} silently return the first match.
    */
   static final String PROJECTION_SEPARATOR = "__";
 
@@ -26,7 +25,7 @@ public final class EntityRef<E> {
     this.alias = alias;
   }
 
-  /** Creates the default instance; its alias is the lower-cased entity simple name. */
+  /** The default instance, aliased with the lower-cased entity simple name. */
   public static <E> EntityRef<E> of(Class<E> entityType) {
     Objects.requireNonNull(entityType, "entityType");
 
@@ -37,22 +36,24 @@ public final class EntityRef<E> {
   }
 
   /**
-   * Creates a distinct instance of the same entity, aliased {@code <defaultAlias>_<qualifier>} —
-   * the second table instance in a self-join.
+   * A distinct instance of the same entity, aliased {@code <thisAlias>_<qualifier>}. Re-aliasing
+   * extends the alias rather than replacing the qualifier, so two instances cannot collide.
    */
   public EntityRef<E> as(String qualifier) {
     Objects.requireNonNull(qualifier, "qualifier");
     if (qualifier.isBlank()) {
       throw new IllegalArgumentException("Alias qualifier must not be blank");
     }
-    rejectReservedSeparator(qualifier, "alias qualifier");
 
-    return new EntityRef<>(entityType, defaultAliasOf(entityType) + "_" + qualifier);
+    String qualifiedAlias = alias + "_" + qualifier;
+    rejectReservedSeparator(qualifiedAlias, "alias");
+
+    return new EntityRef<>(entityType, qualifiedAlias);
   }
 
   /**
-   * Creates a typed property handle. The declared raw type is carried for diagnostics and future
-   * consumers; the ref's {@code T} parameter is the compile-time contract.
+   * A typed property handle. {@code T} is the compile-time contract; the declared raw type is
+   * carried for diagnostics only.
    */
   public <T> PropertyRef<E, T> property(String propertyName, Class<?> declaredRawType) {
     Objects.requireNonNull(propertyName, "propertyName");
@@ -72,10 +73,7 @@ public final class EntityRef<E> {
     return alias;
   }
 
-  /**
-   * Resolves the table name through the given mapping context — names are always the context's
-   * answer, never re-implemented or cached here.
-   */
+  /** Resolves the table name through the context — never re-implemented or cached here. */
   public String tableName(RelationalMappingContext mappingContext) {
     Objects.requireNonNull(mappingContext, "mappingContext");
 

@@ -24,7 +24,7 @@ import org.apache.maven.plugin.logging.Log;
  */
 public class ColumnJavaClassGenerator implements JavaClassGenerator {
 
-  private static final String SQL_PACKAGE = "org.springframework.data.relational.core.sql";
+  private static final ClassName LAZY = ClassName.get("org.springframework.data.util", "Lazy");
 
   private final Log log;
 
@@ -56,16 +56,13 @@ public class ColumnJavaClassGenerator implements JavaClassGenerator {
 
     javaFile.writeTo(Paths.get(outputDir.getAbsolutePath()));
 
-    log.debug(String.format("%s.java has been generated at target/generated-sources: %s.",
-        extendedColumnClass, outputDir.getAbsolutePath()));
+    log.debug(String.format(GENERATED_FILE_LOG_FORMAT, extendedColumnClass.simpleName(),
+        outputDir.getAbsolutePath()));
   }
 
   private TypeSpec buildColumnClass() {
     ClassName column = ClassName.get(SQL_PACKAGE, "Column");
     ClassName expression = ClassName.get(SQL_PACKAGE, "Expression");
-    ClassName lazy = ClassName
-        .get("org.springframework.data.util", "Lazy");
-
     FieldSpec delegateField = FieldSpec.builder(lazyOf(column), "delegate", Modifier.PRIVATE,
             Modifier.FINAL)
         .build();
@@ -76,7 +73,7 @@ public class ColumnJavaClassGenerator implements JavaClassGenerator {
         .addParameter(String.class, "fieldName")
         .addStatement(
             "this.delegate = $T.of(() -> getTable(entityType).column(getColumnName(entityType, fieldName)))",
-            lazy)
+            LAZY)
         .build();
 
     return TypeSpec.classBuilder(extendedColumnClass)
@@ -167,6 +164,6 @@ public class ColumnJavaClassGenerator implements JavaClassGenerator {
   }
 
   private ParameterizedTypeName lazyOf(ClassName type) {
-    return ParameterizedTypeName.get(ClassName.get("org.springframework.data.util", "Lazy"), type);
+    return ParameterizedTypeName.get(LAZY, type);
   }
 }

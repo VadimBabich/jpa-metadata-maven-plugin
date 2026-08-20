@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * Spike-local cross-entity marker. Deliberately <em>not</em> named {@code @References}: the
- * relationship vocabulary — name, retention, coordinates — is an open WS-6 decision this throwaway
+ * relationship vocabulary — name, retention, coordinates — is an open decision this throwaway
  * asset must not pre-empt.
  *
  * <p>Retention is load-bearing for the staleness experiment: CLASS retention puts the target's

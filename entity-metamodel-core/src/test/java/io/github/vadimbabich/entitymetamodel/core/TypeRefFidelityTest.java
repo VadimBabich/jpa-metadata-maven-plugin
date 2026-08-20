@@ -6,8 +6,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Exact declared-type fidelity (typing study, normative table): generics, deeper generics and
- * arrays carry verbatim — the difference between usable and decorative type parameters.
+ * Generics, deeper generics and arrays carry verbatim — the difference between usable and
+ * decorative type arguments.
  */
 class TypeRefFidelityTest {
 
@@ -39,6 +39,14 @@ class TypeRefFidelityTest {
     assertThat(TypeRef.array(TypeRef.of("int"), 1).canonical()).isEqualTo("int[]");
     assertThat(TypeRef.array(TypeRef.of("java.lang.String"), 2).canonical())
         .isEqualTo("java.lang.String[][]");
+  }
+
+  @Test
+  void dimensionsAccumulateWhenTheComponentIsItselfAnArray() {
+    TypeRef intArray = TypeRef.array(TypeRef.of("int"), 1);
+
+    assertThat(TypeRef.array(intArray, 1).canonical()).isEqualTo("int[][]");
+    assertThat(TypeRef.array(TypeRef.array(intArray, 1), 1).canonical()).isEqualTo("int[][][]");
   }
 
   @Test
