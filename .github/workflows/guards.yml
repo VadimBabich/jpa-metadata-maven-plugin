@@ -23,7 +23,7 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0          # gitleaks scans commit history, not just the worktree
       # Run the upstream image directly: no marketplace-action licence gate.
@@ -39,7 +39,7 @@ jobs:
     name: No private material tracked
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The disclosure risk here is proprietary source, not only credentials: private
       # working material must never be tracked. .gitignore is the primary guard; this is the
       # backstop that survives an ignore being weakened.
