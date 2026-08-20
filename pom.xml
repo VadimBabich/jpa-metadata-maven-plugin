@@ -68,7 +68,7 @@
          entity-metamodel-bom. Modules reference these properties; the BOM stays a list of
          family artifacts. Dependencies defining a module's published surface keep their own
          pin: core is zero-dependency, runtime relational-only. -->
-    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
 
