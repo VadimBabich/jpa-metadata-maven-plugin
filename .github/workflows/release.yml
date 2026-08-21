@@ -1,33 +1,213 @@
 name: Release
 
-# Releases are explicit: manual dispatch only. The reactor is mixed-version
-# by design, so maven-release-plugin is retired: releasing from the root
-# would cut every module of the family at once and tag it as the parent. The scoped
-# versions:set + per-line deploy flow that replaces it is not wired yet, so this workflow
-# refuses until it lands — refusing is safe, half-releasing is not.
+# Mixed-version reactor: the retiring plugin on 1.1.x beside the family on 2.0.0-M*. That rules
+# out maven-release-plugin, which cuts one version for the whole reactor, so versions are set
+# ephemerally here and each line deploys on its own.
+#
+# autoPublish=false / waitUntil=validated: a run leaves a VALIDATED deployment and publishes
+# nothing. Publishing is a separate, irreversible act — Central artifacts cannot be edited.
+
 on:
   workflow_dispatch:
+    inputs:
+      line:
+        description: 'Release line — one deployment per line, never mixed'
+        required: true
+        type: choice
+        options:
+          - family
+          - plugin
+      version:
+        description: 'Version to release, e.g. 2.0.0-M1 (no leading v)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Validate only: deploy to VALIDATED, create no tag and no GitHub release'
+        required: true
+        type: boolean
+        default: true
 
+# `gh release create` needs write; nothing else in this job does.
 permissions:
-  contents: read
+  contents: write
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   release:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    # Repository-level secrets resolve here too, so protection rules can be added later
+    # without touching this file.
+    environment: release
+
+    env:
+      LINE: ${{ inputs.line }}
+      VERSION: ${{ inputs.version }}
+      DRY_RUN: ${{ inputs.dry_run }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # A release without the license text in the artifact tree is a defect class this
-      # repo has already shipped once — fail fast, before Maven runs.
+      # This repo has shipped a release without the license text once.
       - name: Require LICENSE in the checkout
         run: test -f LICENSE
 
-      - name: Refuse to release until the scoped flow lands
+      - name: Validate the version input
         run: |
-          echo "::error::Release is blocked, and there is no manual path either. Every module"\
-               "still parents to entity-metamodel-parent:2.0.0-SNAPSHOT, so any release cut"\
-               "now publishes a POM whose parent resolves nowhere. Running release:prepare by"\
-               "hand offers to substitute an unpublished parent version and then tags — do not."\
-               "Wire the scoped versions:set + per-line deploy flow first."
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-(M|RC)[0-9]+)?$'; then
+            echo "::error::'$VERSION' is not a releasable version. Expected X.Y.Z, X.Y.Z-M<n> or"\
+                 "X.Y.Z-RC<n>, with no leading 'v' (the tag gets the prefix, the version does not)."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag v$VERSION already exists. Versions are never reused —"\
+                 "Central is immutable, so a re-release must carry a higher version."
+            exit 1
+          fi
+
+      # Needs a parent version that is already published, and every parent version today is a
+      # SNAPSHOT. A POM whose parent resolves nowhere cannot be corrected after publication.
+      - name: Refuse the plugin line until a family release exists
+        if: inputs.line == 'plugin'
+        run: |
+          echo "::error::The plugin line is not wired yet, deliberately. It needs its parent"\
+               "pinned to an already-published entity-metamodel-parent version, and nothing is"\
+               "published yet. Release the family line first, then wire the parent pin."
           exit 1
+
+      - name: Require the publishing credentials
+        env:
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: |
+          missing=""
+          for name in SONATYPE_USER SONATYPE_PASSWORD MAVEN_GPG_PRIVATE_KEY MAVEN_GPG_PASSPHRASE; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secret(s):$missing. Central rejects unsigned bundles, so a run"\
+                 "without the signing key would fail at validation with a misleading error."\
+                 "Add them to the 'release' environment or as repository secrets."
+            exit 1
+          fi
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+          # server-username/password are ENV VAR NAMES, not the credentials: the generated
+          # settings.xml references them, and the deploy step supplies the values.
+          server-id: central
+          server-username: SONATYPE_USER
+          server-password: SONATYPE_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          # maven-gpg-plugin's default passphraseEnvName — no custom plumbing.
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      # HEAD's commit time, not "now", so re-running on the same commit stays byte-identical.
+      # Stamped into the POMs so the published POM carries it, not just this build.
+      - name: Stamp the reproducible-build timestamp
+        run: |
+          STAMP="$(git log -1 --format=%cI "$GITHUB_SHA" | sed 's/+00:00/Z/')"
+          echo "Stamping project.build.outputTimestamp=$STAMP"
+          mvn -B -q org.codehaus.mojo:versions-maven-plugin:2.21.0:set-property \
+            -Dproperty=project.build.outputTimestamp \
+            -DnewVersion="$STAMP" \
+            -DgenerateBackupPoms=false
+
+      # Never committed or pushed; the edited tree dies with the runner.
+      - name: Set the family version ephemerally
+        run: |
+          mvn -B -q org.codehaus.mojo:versions-maven-plugin:2.21.0:set \
+            -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+
+      # A family dispatch that silently moved the plugin's version would publish a plugin
+      # release by accident.
+      - name: Verify only the family line moved
+        run: |
+          python3 - "$VERSION" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          want = sys.argv[1]
+          ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+          def read(path):
+              root = ET.parse(path).getroot()
+              own = root.find('m:version', ns)
+              parent = root.find('m:parent/m:version', ns)
+              return (own.text if own is not None else None,
+                      parent.text if parent is not None else None)
+          failures = []
+          own, _ = read('pom.xml')
+          if own != want:
+              failures.append(f'parent POM is {own}, expected {want}')
+          for module in ('entity-metamodel-bom', 'entity-metamodel-core', 'entity-metamodel-runtime'):
+              own, parent = read(f'{module}/pom.xml')
+              if parent != want:
+                  failures.append(f'{module} parent ref is {parent}, expected {want}')
+              if own is not None and own != want:
+                  failures.append(f'{module} declares its own version {own}')
+          own, parent = read('jpa-metadata-maven-plugin/pom.xml')
+          if own != '1.1.0-SNAPSHOT':
+              failures.append(f'plugin own version changed to {own} — it must not move on a family release')
+          if parent != want:
+              failures.append(f'plugin parent ref is {parent}, expected {want}')
+          if failures:
+              print('::error::version wiring is wrong: ' + '; '.join(failures))
+              raise SystemExit(1)
+          print(f'family at {want}; plugin still 1.1.0-SNAPSHOT parented to {want}')
+          PY
+
+      # -am adds the parent POM, which consumers need to resolve the modules; the plugin module
+      # is outside -pl so it cannot reach the bundle. gpg.skip is overridden here rather than
+      # flipped in the POM, so signing stays off for every other build.
+      - name: Deploy the family line to the Portal
+        env:
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: |
+          mvn -B -Prelease -Dgpg.skip=false clean deploy \
+            -pl entity-metamodel-bom,entity-metamodel-core,entity-metamodel-runtime -am
+
+      - name: Collect the SBOMs
+        run: |
+          mkdir -p "$RUNNER_TEMP/sbom"
+          find . -path '*/target/*.json' -name '*bom*' -exec cp {} "$RUNNER_TEMP/sbom/" \; || true
+          ls -1 "$RUNNER_TEMP/sbom" || echo "(no SBOM found — cyclonedx output moved?)"
+
+      - name: Tag and publish the GitHub release
+        if: inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=""
+          case "$VERSION" in
+            *-M*|*-RC*) PRERELEASE="--prerelease" ;;
+          esac
+
+          # --target creates the tag server-side, so this job never pushes to master.
+          gh release create "v$VERSION" \
+            --target "$GITHUB_SHA" \
+            --title "v$VERSION" \
+            --notes "Family line $VERSION. The artifacts sit on the Central Portal in VALIDATED state until explicitly published." \
+            $PRERELEASE
+
+          for sbom in "$RUNNER_TEMP"/sbom/*; do
+            [ -e "$sbom" ] && gh release upload "v$VERSION" "$sbom"
+          done
+
+      - name: What happens next
+        run: |
+          echo "### Deployment reached VALIDATED — nothing is public yet" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Line: \`$LINE\` · version: \`$VERSION\` · dry run: \`$DRY_RUN\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "1. Open the Central Portal deployments view and confirm the bundle is VALIDATED." >> "$GITHUB_STEP_SUMMARY"
+          echo "2. Dry run: **drop** it. Real release: **publish** it — that step is irreversible." >> "$GITHUB_STEP_SUMMARY"
+          echo "3. Then work the post-release checklist (changelog heading, README pin, roadmap date)." >> "$GITHUB_STEP_SUMMARY"
