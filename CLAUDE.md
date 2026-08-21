@@ -56,7 +56,7 @@ correct side, and keep committed files free of references to the private side.
   not general advice.
 - `CLAUDE.local.md` (uncommitted) — where the private records live and what they decide.
 
-## Current state (2026-08-20)
+## Current state (2026-08-21)
 
 - Shipping: the 1.x Mojo at `1.1.0-SNAPSHOT`; `master` is pushed to `origin`. Its code lives in
   `jpa-metadata-maven-plugin/src/main/java/io/github/vadimbabich/metadata/`: `parser/`
@@ -83,12 +83,13 @@ correct side, and keep committed files free of references to the private side.
 - Releases are dispatch-triggered (`.github/workflows/release.yml`); milestones and RCs take the
   same path. Tag as `v<version>`, matching `v1.1.0` — the unprefixed `1.0.0` is a known
   inconsistency; do not add more.
-- **No release path is wired today and `release:prepare` must not be run by hand.** The workflow
-  refuses on purpose: every module parents to `2.0.0-SNAPSHOT`, so a release cut now publishes an
-  unresolvable parent, and the interactive prompt happily substitutes an unpublished version and
-  tags. Wire the scoped `versions:set` + per-line deploy flow before releasing anything.
-- **Do not rename the repository or the published coordinates.** The rename is decided in
-  principle but not scheduled; the retiring 1.x artifact keeps its coordinates either way.
+- **Releases run only through the workflow; never run `release:prepare` by hand.** It sets versions
+  ephemerally from the dispatch inputs and deploys one line per run, dry-run by default. A manual
+  cut would publish an unresolvable parent, since every module parents to `2.0.0-SNAPSHOT`.
+- The dispatch is gated on `master`, so a dry run must be triggered there, not from a branch.
+- **The repository is `entity-metamodel`** (renamed 2026-08-21). Never create a repository under
+  the old name — that silently kills GitHub's redirects. Published coordinates are unchanged: the
+  retiring 1.x artifact keeps `jpa-metadata-maven-plugin`, which is also its module directory.
 
 ## Code style
 

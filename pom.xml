@@ -15,7 +15,7 @@
     are cut per line with scoped versions:set from dispatch inputs — nothing here is ever the
     release version of record.
   </description>
-  <url>https://github.com/VadimBabich/jpa-metadata-maven-plugin</url>
+  <url>https://github.com/VadimBabich/entity-metamodel</url>
 
   <licenses>
     <license>
@@ -39,9 +39,9 @@
   <scm child.scm.connection.inherit.append.path="false"
        child.scm.developerConnection.inherit.append.path="false"
        child.scm.url.inherit.append.path="false">
-    <connection>scm:git:https://github.com/VadimBabich/jpa-metadata-maven-plugin.git</connection>
-    <developerConnection>scm:git:https://github.com/VadimBabich/jpa-metadata-maven-plugin.git</developerConnection>
-    <url>https://github.com/VadimBabich/jpa-metadata-maven-plugin</url>
+    <connection>scm:git:https://github.com/VadimBabich/entity-metamodel.git</connection>
+    <developerConnection>scm:git:https://github.com/VadimBabich/entity-metamodel.git</developerConnection>
+    <url>https://github.com/VadimBabich/entity-metamodel</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -98,7 +98,7 @@
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/VadimBabich/jpa-metadata-maven-plugin</url>
+      <url>https://maven.pkg.github.com/VadimBabich/entity-metamodel</url>
     </repository>
   </distributionManagement>
 

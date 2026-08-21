@@ -19,7 +19,7 @@
   <!-- Avoid the '@' sigil here: Maven treats @...@ as a filter placeholder, so writing the
        annotation names as @Table/@Column makes this text an unresolvable expression. -->
   <description>A Maven plugin that generates static metamodel classes from Spring Data Relational entities, using their Table and Column annotations, for type-safe query construction</description>
-  <url>https://github.com/VadimBabich/jpa-metadata-maven-plugin</url>
+  <url>https://github.com/VadimBabich/entity-metamodel</url>
 
   <licenses>
     <license>
@@ -39,7 +39,7 @@
   <scm>
     <connection>scm:git:${project.scm.url}</connection>
     <developerConnection>scm:git:${project.scm.url}</developerConnection>
-    <url>https://github.com/VadimBabich/jpa-metadata-maven-plugin.git</url>
+    <url>https://github.com/VadimBabich/entity-metamodel.git</url>
     <tag>HEAD</tag>
   </scm>
 
