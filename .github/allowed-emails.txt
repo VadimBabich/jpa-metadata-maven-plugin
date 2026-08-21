@@ -1,0 +1,17 @@
+# Addresses permitted in commit authorship, commit messages and tracked file content. The guard
+# rejects everything else. Adding an entry here is the record of the decision to publish that
+# address, so add it in the same commit as the address it permits.
+#
+# One entry per line: a full address, or *@domain for a whole domain.
+
+# Maintainer, via GitHub's noreply form.
+*@users.noreply.github.com
+
+# GitHub automation, including the Signed-off-by trailer Dependabot writes.
+actions@github.com
+noreply@github.com
+support@github.com
+
+# RFC 2606 example domains; they route nowhere.
+*@example.com
+*@example.org
