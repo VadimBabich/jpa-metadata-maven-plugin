@@ -115,7 +115,7 @@ jobs:
       # Stamped into the POMs so the published POM carries it, not just this build.
       - name: Stamp the reproducible-build timestamp
         run: |
-          STAMP="$(git log -1 --format=%cI "$GITHUB_SHA" | sed 's/+00:00/Z/')"
+          STAMP="$(TZ=UTC0 git log -1 --date=iso-strict-local --format=%cd "$GITHUB_SHA")"
           echo "Stamping project.build.outputTimestamp=$STAMP"
           mvn -B -q org.codehaus.mojo:versions-maven-plugin:2.21.0:set-property \
             -Dproperty=project.build.outputTimestamp \
@@ -178,7 +178,7 @@ jobs:
       - name: Collect the SBOMs
         run: |
           mkdir -p "$RUNNER_TEMP/sbom"
-          find . -path '*/target/*.json' -name '*bom*' -exec cp {} "$RUNNER_TEMP/sbom/" \; || true
+          find . -path '*/target/*.json' -name '*-bom.json' -exec cp {} "$RUNNER_TEMP/sbom/" \; || true
           ls -1 "$RUNNER_TEMP/sbom" || echo "(no SBOM found — cyclonedx output moved?)"
 
       - name: Tag and publish the GitHub release
