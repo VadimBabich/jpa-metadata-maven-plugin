@@ -1,15 +1,11 @@
 name: Guards
 
-# Repository guards that are independent of the Maven build: secret scanning and a
-# check that private material never becomes tracked. Kept separate from maven.yml so a
-# guard failure is unambiguous and so these run once, not per JDK.
+# Separate from maven.yml so a guard failure is unambiguous and these run once, not per JDK.
 
 on:
   push:
     branches:
-      - master
-      - 'feature/**'
-      - 'bug/**'
+      - '**'
   pull_request:
     branches:
       - master
@@ -17,6 +13,12 @@ on:
 
 permissions:
   contents: read
+
+# GitHub's implicit shell is `bash -e`, with no pipefail. Every guard here reads git through
+# pipelines, so that default would let a failing stage pass as success.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   secrets:
@@ -26,29 +28,49 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0          # gitleaks scans commit history, not just the worktree
-      # Run the upstream image directly: no marketplace-action licence gate.
-      # Pinned by digest — a mutable tag would let an upstream push change what executes
-      # here with the repository bind-mounted. Bump tag and digest together.
+      # Upstream image, pinned by digest: a mutable tag could change what executes here with
+      # the repository bind-mounted. Bump tag and digest together.
       - name: Run gitleaks over full history
         run: |
           docker run --rm -v "$PWD:/repo" \
             zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             detect --source /repo --redact --verbose
 
+  emails:
+    name: No unlisted email addresses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0          # authorship and diffs need history, not just the worktree
+      # New commits only. Auditing all history would fail on pre-guard commits and tempt a
+      # rewrite that unpublishes nothing. Allowlist: .github/allowed-emails.txt.
+      - name: Fail on email addresses not in the allowlist
+        env:
+          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          scan_range="$(./.github/scripts/resolve-scan-range.sh)"
+
+          echo "scanning ${scan_range}"
+
+          ./.github/scripts/check-emails.sh range "${scan_range}"
+
   private-paths:
     name: No private material tracked
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # The disclosure risk here is proprietary source, not only credentials: private
-      # working material must never be tracked. .gitignore is the primary guard; this is the
-      # backstop that survives an ignore being weakened.
+      # The risk is licensed third-party source, not only credentials. .gitignore is the
+      # primary guard; this is the backstop if an ignore is ever weakened.
       - name: Fail if private material is tracked
         run: |
-          hits=$(git ls-files | grep -E '^(_doc/|docs/(repo_usage|repository)/)' || true)
-          if [ -n "$hits" ]; then
+          tracked_files="$(git ls-files)"
+
+          if tracked_private_paths="$(printf '%s\n' "${tracked_files}" | grep -E '^(_doc/|docs/(repo_usage|repository)/)')"; then
             echo "::error::Private material is tracked in git:"
-            echo "$hits"
+            echo "${tracked_private_paths}"
             exit 1
           fi
+
           echo "clean — no private paths tracked"
