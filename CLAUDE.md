@@ -30,6 +30,16 @@ recorded privately; read it before writing any v2 code.
 6. **Never commit credentials, tokens or keys.** CI scans full history with gitleaks, but it
    only *detects*: a secret in a pushed commit is compromised and must be **rotated** —
    rewriting history does not undo it.
+7. **No email address enters this repository unless it is on the allowlist.** That covers
+   commit authorship, commit messages, *and* file content, including POM `<developers>`. Commit as
+   `<id>+<user>@users.noreply.github.com`; never introduce a personal address, and never
+   invent a contact address to satisfy a validator — this project routes contact through
+   GitHub security advisories, and a published POM cannot be edited afterwards. If an address
+   genuinely must ship, it is a role or alias address and it goes into
+   `.github/allowed-emails.txt` in the same commit, which is the record of that decision.
+   Enforced by `.github/scripts/check-emails.sh` — the Guards workflow runs it over each
+   push's new commits, and `git config core.hooksPath .githooks` runs it pre-commit (enable it
+   once per clone; the hook is the convenience, CI is the control).
 
 ## Documents
 
@@ -41,6 +51,9 @@ correct side, and keep committed files free of references to the private side.
   re-deriving it.
 - `docs/reactive-code-style.md` — the reactive rule set (hand-written runtime, generated output,
   tests). Read it before writing or emitting a single reactive line; its §1 and §8 are contractual.
+- `docs/shell-code-style.md` — the shell rule set (guards, hooks, workflow `run:` blocks). Read §1
+  and §2 before touching any script: they record failure modes that were shipped and caught here,
+  not general advice.
 - `CLAUDE.local.md` (uncommitted) — where the private records live and what they decide.
 
 ## Current state (2026-08-20)
@@ -93,27 +106,57 @@ Optimize for scanning, not compactness.
 - `src/main/java` declares explicit types today (no `var`). Match the file you are editing
   rather than introducing a second style.
 
-**Reactive code** — full rules in `docs/reactive-code-style.md`; read it before writing or emitting
-reactive code. The non-negotiables, because they are the ones violated silently:
+**Reactive code** — rules in `docs/reactive-code-style.md`; **read it before writing or emitting
+any reactive line.** Costliest mistakes it prevents: blocking, scheduling or embedding
+`timeout`/`retry`/`cache` in library or generated code · eager `switchIfEmpty` fallbacks ·
+re-subscribing a named publisher · unbounded `flatMap` · asserting with `block()` over `StepVerifier`.
 
-- **Never** block, schedule (`subscribeOn`/`publishOn`/`Schedulers`), `subscribe()`, or embed policy
-  (`timeout`/`retryWhen`/`cache`/`onErrorContinue`) in library or generated code. Latency and retry
-  budgets are the consumer's; blocking one event-loop thread stalls every request it multiplexes.
-- **Defer every fallback that costs anything**: `switchIfEmpty(Mono.defer(...))` or
-  `Mono.error(Supplier)` — the eager form builds the exception, stack trace and all, on the happy
-  path too. Never `Mono.just(someCall())`.
-- A named publisher is a *description*: two subscriptions run the I/O twice. Compose once.
-- Bound `flatMap` concurrency against the connection pool; pick `concatMap` when order matters.
-- Generated code is immutable, stateless, I/O-free and deterministic in emission order (rail 4).
-- Tests assert signals with `StepVerifier`, including an error and a cancellation path; `block()`
-  belongs in fixtures, never in an assertion.
+**Shell scripts** — rules in `docs/shell-code-style.md`; **read §1–§2 before touching any script
+or workflow `run:` block.** Load-bearing there: `set -euo pipefail` and **never `-E`** · bash 3.2
+only · a pipeline reports only its last stage · fail closed on empty input · `shellcheck -S style`
+plus tests that assert stderr, not just exit codes.
 
-**Comments and JavaDoc.** Comments explain *why*: a constraint, a workaround, a non-obvious
-rule. Delete anything that restates the code. JavaDoc on public API only, one or two sentences,
-never a restatement of the signature. One carve-out: JavaDoc on Mojo `@Parameter` fields is
-harvested into `plugin.xml` by maven-plugin-plugin and *is* the `mvn help:describe` and site
-documentation — keep it, however obvious it looks. Editing the generated-file header
-(`FILE_HEADER`) changes generated output, so rail 4 applies.
+## Comments — every file type
+
+Treat comments as debt that must earn its place. **Assume a comment is unnecessary until it
+proves otherwise: if deleting it costs no understanding, delete it.** This applies to Java,
+shell, workflow YAML, POM XML and config alike — the language changes the syntax, not the test.
+
+**Keep a comment only when it explains one of these:** a non-obvious rule or constraint, a
+workaround for external behaviour, a decision and its rationale, deliberately surprising code, or
+a concurrency, security, performance or compatibility concern. Prefer one or two sentences.
+
+**Delete on sight:**
+
+- Anything restating the code — `# increment counter`, `<!-- set the version -->`, a JavaDoc that
+  repeats the signature, a step comment that repeats the step's own `name:`.
+- LLM boilerplate: "This class represents…", "This method is responsible for…", "Helper method
+  used to…", "Utility method for…", "It is important to note…".
+- Parameter-by-parameter narration of an obvious signature.
+- Getters, setters, constructors, builders, records, simple delegation, mapping, logging,
+  validation and dependency injection — unless something there is genuinely surprising.
+
+**Comment the shape that invites a wrong "simplification."** Where code is deliberately unusual
+because a simpler form is broken, one line naming the trap is worth more than a paragraph
+elsewhere — a pipeline that must not be collapsed, a strict-mode flag that must not be added, a
+seemingly redundant verification step. Both fail-open defects in the email guard were introduced
+by exactly that kind of tidy-up.
+
+**Per file type:**
+
+- **Java** — JavaDoc on public API only. Carve-out: JavaDoc on Mojo `@Parameter` fields is
+  harvested into `plugin.xml` and *is* the `mvn help:describe` and site documentation — keep it,
+  however obvious it looks. Editing `FILE_HEADER` changes generated output, so rail 4 applies.
+- **Shell** — see `docs/shell-code-style.md`. `|| true` and any other tolerated failure needs its
+  reason stated at the call site.
+- **Workflow YAML** — the step's `name:` is the description; comment only why a step exists, why a
+  permission is elevated, or why an action is pinned by digest.
+- **POM XML** — comment Maven traps and inheritance effects (silently dropped attributes,
+  `dependencyManagement` reaching BOM consumers), never what a plugin plainly does.
+- **`docs/`** — documentation, not comments; the rules above don't apply, but concision does.
+
+**Never cite the private side from a committed file** — no path, filename or section number of a
+private record, in a comment or anywhere else (rail 1). Committed comments must stand on their own.
 
 ## Build, test and quality gate — before every commit of code
 
@@ -134,5 +177,8 @@ extend it when generator output changes.
    reformat `src/it/**/expected/**` or generated sources (rail 4). Style is `.editorconfig`;
    change it deliberately, never as a side effect.
 3. `mvn -B verify` must pass.
-4. If the IDE MCP is unavailable, say so explicitly, fall back to `mvn -B verify` plus
+4. If you touched a shell script or a workflow `run:` block: `shellcheck -S style` must pass, and
+   re-run the script's controls asserting **stderr as well as exit codes** (`docs/shell-code-style.md`
+   §8). Workflow YAML changes get parsed before commit — a broken `run:` block only surfaces in CI.
+5. If the IDE MCP is unavailable, say so explicitly, fall back to `mvn -B verify` plus
    `mcp__ide__getDiagnostics`, and never report inspections as run when they were not.

@@ -9,9 +9,8 @@ packages (`Column_`, `StaticR2dbcEntityTemplateAccessor_`). That shape is a regr
 tripwire, **not an endorsement** — the v2 design replaces it, and the split-package
 emission disappears with it.
 
-Nothing about the v2 shape is settled yet, and the member-ordering and `@Generated`
-decisions are still proposals. Until they are accepted, the corpus records what the
-generator emits today; do not "pre-apply" a proposed shape.
+The v2 shape is not settled: member ordering and `@Generated` are still proposals. The
+corpus records what the generator emits today — never pre-apply a proposed shape.
 
 ## Rules
 
@@ -21,9 +20,8 @@ generator emits today; do not "pre-apply" a proposed shape.
    the commit message rather than by a same-commit diff.
 2. Generated output must remain byte-deterministic: no dates, no absolute paths, no
    environment-dependent content, and a stable member order.
-3. Every corpus file must compile before ratification — the IT compiles the generated
-   output against real Spring Data artifacts. Never accept hand-authored expected sources
-   on eyeball review; generics-heavy files in particular must be machine-verified.
+3. Every corpus file must compile before ratification — the IT compiles it against real
+   Spring Data artifacts. Never accept hand-authored expected sources on eyeball review.
 
 ## Procedure
 
@@ -36,7 +34,6 @@ mvn verify
 mvn verify && mvn verify
 # 4. Stage explicitly (never git add .):
 git add jpa-metadata-maven-plugin/src/it/simple-consumer/expected/...
-# 5. Commit message names the approving decision record by filename.
 ```
 
 ## Red flags — stop and escalate
@@ -47,5 +44,5 @@ git add jpa-metadata-maven-plugin/src/it/simple-consumer/expected/...
   element ordering. This is a known hazard (javac vs ECJ, and binary-sourced types); it
   is the reason a generator-imposed total order is proposed rather than relying on
   declaration order.
-- Any temptation to update expected files "to make the build green" without one — that
-  converts a contract change into an accident, which is exactly what this gate prevents.
+- Updating expected files "to make the build green" with no approving record — that turns a
+  contract change into an accident, which is what this gate exists to prevent.
